@@ -1,0 +1,38 @@
+{
+  "name": "@mbrundige/token-tracker",
+  "version": "0.1.0",
+  "description": "Local Cursor/Claude skill that snapshots AI token usage by project and feature, with an optional CLI status line.",
+  "bin": {
+    "token-tracker": "bin/token-tracker.js"
+  },
+  "files": [
+    "bin",
+    "scripts",
+    "cursor/SKILL.md",
+    "claude/SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbrundige/token-tracker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mbrundige/token-tracker/issues"
+  },
+  "homepage": "https://github.com/mbrundige/token-tracker#readme",
+  "keywords": [
+    "cursor",
+    "claude-code",
+    "token-tracking",
+    "statusline",
+    "ai-usage"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
+}

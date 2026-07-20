@@ -27,7 +27,7 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 2. Run:
 
 ```bash
-~/.claude/skills/token-tracker/scripts/save-token-usage.py --json '<snapshot-json>'
+~/.claude/skills/token-tracker/scripts/save-token-usage.js --json '<snapshot-json>'
 ```
 
 3. Tell the user the snapshot was saved to:
@@ -39,28 +39,28 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 When the user says something like "track this feature as token-tracker-init", set the current workspace feature:
 
 ```bash
-~/.claude/skills/token-tracker/scripts/set-token-context.py --workspace "$PWD" --feature "token-tracker-init"
+~/.claude/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --feature "token-tracker-init"
 ```
 
 If they also specify a project:
 
 ```bash
-~/.claude/skills/token-tracker/scripts/set-token-context.py --workspace "$PWD" --project "token-tracker" --feature "token-tracker-init"
+~/.claude/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --project "token-tracker" --feature "token-tracker-init"
 ```
 
 Project names resolve in this order:
 
-1. `TOKEN_TRACKER_PROJECT` environment variable.
-2. Exact workspace path in `~/.cursor/token-tracker/config.json` under `projects`.
-3. `default_project` in `~/.cursor/token-tracker/config.json`.
-4. Current workspace folder name.
+1. `TOKEN_TRACKER_PROJECT`
+2. Workspace path in `~/.cursor/token-tracker/config.json` under `projects`
+3. `default_project`
+4. Workspace folder name
 
 Feature names resolve in this order:
 
-1. `TOKEN_TRACKER_FEATURE` environment variable.
-2. Exact workspace path in `~/.cursor/token-tracker/config.json` under `features`.
-3. `default_feature` in `~/.cursor/token-tracker/config.json`.
-4. Current git branch.
+1. `TOKEN_TRACKER_FEATURE`
+2. Workspace path under `features`
+3. `default_feature`
+4. Current git branch
 
 ## Snapshot Rules
 
@@ -71,29 +71,8 @@ Feature names resolve in this order:
 
 ## Optional Status Line
 
-The status line script is available at:
-
 ```bash
-~/.claude/skills/token-tracker/scripts/statusline-token-usage.py
+~/.claude/skills/token-tracker/scripts/statusline-token-usage.js
 ```
 
-It expects Claude/Cursor-style status line JSON on stdin, records deduped local snapshots when token counters change, and prints project/feature, model, context usage, and token count.
-
-Status line fields are controlled by `~/.cursor/token-tracker/config.json`:
-
-```json
-{
-  "statusline": {
-    "enabled": true,
-    "show_label": true,
-    "show_project": true,
-    "show_feature": true,
-    "show_model": true,
-    "show_context": true,
-    "show_tokens": true,
-    "show_cost": false
-  }
-}
-```
-
-Exact billing can be added later through an MCP without changing the JSONL history format.
+Status line fields are controlled by `~/.cursor/token-tracker/config.json`.

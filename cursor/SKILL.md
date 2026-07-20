@@ -19,6 +19,7 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 
 1. Build a short snapshot:
    - `project`: workspace directory name or current project name.
+   - `feature`: configured feature name, current git branch, or omit if unknown.
    - `summary`: one sentence describing the session or task.
    - `model`: current model name if known.
    - `prompt_tokens`, `completion_tokens`, `total_tokens`: include exact values only when available.
@@ -26,7 +27,7 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 2. Run the save script:
 
 ```bash
-~/.cursor/skills/token-tracker/scripts/save-token-usage.py --json '<snapshot-json>'
+~/.cursor/skills/token-tracker/scripts/save-token-usage.js --json '<snapshot-json>'
 ```
 
 3. Tell the user the snapshot was saved and include the history path:
@@ -60,28 +61,13 @@ Feature names resolve in this order:
 When the user says something like "for this feature, track this as token-tracker-init", set the current workspace feature:
 
 ```bash
-~/.cursor/skills/token-tracker/scripts/set-token-context.py --workspace "$PWD" --feature "token-tracker-init"
+~/.cursor/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --feature "token-tracker-init"
 ```
 
 If they also specify a project:
 
 ```bash
-~/.cursor/skills/token-tracker/scripts/set-token-context.py --workspace "$PWD" --project "token-tracker" --feature "token-tracker-init"
-```
-
-Example config:
-
-```json
-{
-  "default_project": null,
-  "default_feature": null,
-  "projects": {
-    "/Users/me/work/my-repo": "Client Portal"
-  },
-  "features": {
-    "/Users/me/work/my-repo": "checkout-redesign"
-  }
-}
+~/.cursor/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --project "token-tracker" --feature "token-tracker-init"
 ```
 
 ## Status Line
@@ -89,26 +75,9 @@ Example config:
 The status line script lives at:
 
 ```bash
-~/.cursor/skills/token-tracker/scripts/statusline-token-usage.py
+~/.cursor/skills/token-tracker/scripts/statusline-token-usage.js
 ```
 
-It reads Cursor status line JSON from stdin, records a deduped local usage snapshot when token counters change, and prints project/feature, model, context usage, and token count.
-
-Status line fields are controlled by `~/.cursor/token-tracker/config.json`:
-
-```json
-{
-  "statusline": {
-    "enabled": true,
-    "show_label": true,
-    "show_project": true,
-    "show_feature": true,
-    "show_model": true,
-    "show_context": true,
-    "show_tokens": true,
-    "show_cost": false
-  }
-}
-```
+Status line fields are controlled by `~/.cursor/token-tracker/config.json` (`statusline.show_*` and optional `show_cost`).
 
 Exact billing can be added later through an MCP without changing the JSONL history format.
