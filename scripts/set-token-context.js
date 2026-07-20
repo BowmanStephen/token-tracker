@@ -66,16 +66,37 @@ function main() {
   if (!config.projects || typeof config.projects !== "object") config.projects = {};
   if (!config.features || typeof config.features !== "object") config.features = {};
 
+  const prevProject = config.projects[workspace] || null;
+  const prevFeature = config.features[workspace] || null;
+
   if (args.project) config.projects[workspace] = args.project;
   if (args.clearFeature) delete config.features[workspace];
   else if (args.feature) config.features[workspace] = args.feature;
+
+  const nextProject = config.projects[workspace] || null;
+  const nextFeature = config.features[workspace] || null;
+  const switched = args.project || args.feature || args.clearFeature;
+  const changed = prevProject !== nextProject || prevFeature !== nextFeature;
+
+  // Reset feature-scoped token display on project/feature switch.
+  if (switched && changed) {
+    if (!config.token_baselines || typeof config.token_baselines !== "object") {
+      config.token_baselines = {};
+    }
+    config.token_baselines[workspace] = {
+      project: nextProject,
+      feature: nextFeature,
+      pending_reset: true,
+    };
+  }
 
   saveConfig(config);
   console.log(
     JSON.stringify({
       workspace,
-      project: config.projects[workspace] || null,
-      feature: config.features[workspace] || null,
+      project: nextProject,
+      feature: nextFeature,
+      tokens_reset: Boolean(switched && changed),
     }),
   );
 }

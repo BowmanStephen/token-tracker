@@ -1,15 +1,31 @@
 ---
 name: token-tracker
-description: Saves Cursor token usage snapshots to local history and helps track project token cost. Use when the user asks to save, record, dump, log, or track token usage/history; when token usage or cost is discussed; or after long tasks where the user may want to preserve a usage snapshot.
+description: Saves Cursor token usage snapshots and reports token usage by feature with a daily heat map. Use when the user invokes /token-tracker; asks to save, record, dump, log, or track token usage/history; wants a usage breakdown or heat map; discusses token usage or cost; or wants to label the current project or feature.
 ---
 
 # Token Tracker
 
-## When To Prompt
+## Slash Command: /token-tracker
+
+When the user invokes `/token-tracker` (with no other request), run the report and show the output:
+
+```bash
+~/.cursor/skills/token-tracker/scripts/report-token-usage.js
+```
+
+Present the report as-is (feature breakdown + GitHub-style daily heat map). Then ask once:
+
+`Also save a usage snapshot for the current feature?`
+
+Default to not saving if they do not answer.
+
+If `/token-tracker` includes an explicit ask (e.g. set feature, save, enable status line), do that instead of or in addition to the report.
+
+## When To Prompt (manual save)
 
 Prompt the user before saving unless they explicitly asked to save.
 
-Ask a concise question like:
+Ask:
 
 `Save this token usage snapshot to local history?`
 
@@ -24,23 +40,21 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
    - `model`: current model name if known.
    - `prompt_tokens`, `completion_tokens`, `total_tokens`: include exact values only when available.
    - `metadata`: optional small object for non-sensitive details.
-2. Run the save script:
+2. Run:
 
 ```bash
 ~/.cursor/skills/token-tracker/scripts/save-token-usage.js --json '<snapshot-json>'
 ```
 
-3. Tell the user the snapshot was saved and include the history path:
-
-`~/.cursor/token-tracker/history.jsonl`
+3. Tell the user the snapshot was saved to `~/.cursor/token-tracker/history.jsonl`.
 
 ## Snapshot Rules
 
 - Save summaries, not conversation content.
 - If token counts are unavailable, save the summary with `source: "manual"` and omit the unknown fields.
-- Status line snapshots use `source: "statusline"` and are deduped by session, project, model, and token counters.
-- If the user asks for project history, read `~/.cursor/token-tracker/history.jsonl` and summarize entries for the current project.
-- The status line shows an ASCII context progress bar and current token count.
+- Status line tokens are feature-scoped: switching project/feature resets the token counter for that scope.
+- Status line snapshots use `source: "statusline"` and store the current feature token total (not full session total).
+- If the user asks for project/feature history, run the report script or summarize `~/.cursor/token-tracker/history.jsonl`. For a feature total, prefer the report (epoch-aware) over naively summing rows.
 
 ## Project And Feature Names
 
@@ -58,26 +72,16 @@ Feature names resolve in this order:
 3. `default_feature` in `~/.cursor/token-tracker/config.json`.
 4. Current git branch, using Cursor `worktree.name` first and `git branch --show-current` as fallback.
 
-When the user says something like "for this feature, track this as token-tracker-init", set the current workspace feature:
+Set feature:
 
 ```bash
-~/.cursor/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --feature "token-tracker-init"
-```
-
-If they also specify a project:
-
-```bash
-~/.cursor/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --project "token-tracker" --feature "token-tracker-init"
+~/.cursor/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --feature "maintenance"
 ```
 
 ## Status Line
-
-The status line script lives at:
 
 ```bash
 ~/.cursor/skills/token-tracker/scripts/statusline-token-usage.js
 ```
 
-Status line fields are controlled by `~/.cursor/token-tracker/config.json` (`statusline.show_*` and optional `show_cost`).
-
-Exact billing can be added later through an MCP without changing the JSONL history format.
+Fields are controlled by `~/.cursor/token-tracker/config.json` under `statusline`.

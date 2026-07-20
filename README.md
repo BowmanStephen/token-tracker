@@ -56,6 +56,16 @@ Project resolution order:
 3. `default_project`
 4. Workspace folder name
 
+Token counts in the status line are feature-scoped. Switching project or feature resets `toks` to `0` for the new scope and tracks usage from that point forward.
+
+## Report
+
+```bash
+npx @mbrundige/token-tracker report
+```
+
+Shows usage by feature and a GitHub-style daily heat map. Invoking `/token-tracker` in Cursor/Claude should run this report.
+
 ## Save A Snapshot
 
 ```bash

@@ -28,6 +28,45 @@ function loadJsonFile(filePath) {
   }
 }
 
+function saveConfig(config) {
+  fs.mkdirSync(path.dirname(CONFIG_PATH), { recursive: true });
+  fs.writeFileSync(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+}
+
+function resolveFeatureTokens(config, workspace, project, feature, inputTokens, outputTokens) {
+  if (!workspace) {
+    return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+  }
+  if (!config.token_baselines || typeof config.token_baselines !== "object") {
+    config.token_baselines = {};
+  }
+  const baseline = config.token_baselines[workspace];
+  const scopeChanged =
+    !baseline ||
+    baseline.project !== project ||
+    baseline.feature !== (feature || null) ||
+    baseline.pending_reset === true;
+
+  if (scopeChanged) {
+    config.token_baselines[workspace] = {
+      project,
+      feature: feature || null,
+      prompt_tokens: inputTokens,
+      completion_tokens: outputTokens,
+      pending_reset: false,
+    };
+    saveConfig(config);
+    return { inputTokens: 0, outputTokens: 0, totalTokens: 0 };
+  }
+
+  const baseIn = Number(baseline.prompt_tokens || 0);
+  const baseOut = Number(baseline.completion_tokens || 0);
+  // Context window can shrink (compaction); keep non-negative feature totals.
+  const featureIn = Math.max(0, inputTokens - baseIn);
+  const featureOut = Math.max(0, outputTokens - baseOut);
+  return { inputTokens: featureIn, outputTokens: featureOut, totalTokens: featureIn + featureOut };
+}
+
 function loadJsonStdin() {
   let raw = "";
   try {
@@ -228,14 +267,30 @@ function main() {
   const project = projectFromPayload(config, currentDir);
   const feature = featureFromPayload(payload, config, currentDir);
   const model = modelFromPayload(payload);
-  const [inputTokens, outputTokens, usedPct] = contextTokens(payload);
-  const totalContext = inputTokens + outputTokens;
+  const [sessionIn, sessionOut, usedPct] = contextTokens(payload);
+  const featureTokens = resolveFeatureTokens(
+    config,
+    currentDir,
+    project,
+    feature,
+    sessionIn,
+    sessionOut,
+  );
 
   const rows = iterHistory();
-  autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, outputTokens, usedPct);
+  autoSaveSnapshot(
+    payload,
+    rows,
+    project,
+    feature,
+    model,
+    featureTokens.inputTokens,
+    featureTokens.outputTokens,
+    usedPct,
+  );
 
   const ctx = contextBar(usedPct);
-  const toks = `toks ${compactTokens(totalContext)}`;
+  const toks = `toks ${compactTokens(featureTokens.totalTokens)}`;
   const scope = feature && options.show_feature ? `${project}/${feature}` : project;
   const parts = [];
   if (options.show_label) parts.push("token-tracker");
@@ -243,7 +298,9 @@ function main() {
   if (options.show_model) parts.push(model);
   if (options.show_context) parts.push(ctx);
   if (options.show_tokens) parts.push(toks);
-  if (options.show_cost) parts.push(estimateCost(inputTokens, outputTokens, model));
+  if (options.show_cost) {
+    parts.push(estimateCost(featureTokens.inputTokens, featureTokens.outputTokens, model));
+  }
   console.log(parts.join(" | "));
 }
 

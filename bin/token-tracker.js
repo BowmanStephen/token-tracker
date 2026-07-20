@@ -28,6 +28,7 @@ const DEFAULT_CONFIG = {
 function usage() {
   console.log(`Usage:
   npx @mbrundige/token-tracker install [--cursor] [--claude] [--statusline|--no-statusline]
+  npx @mbrundige/token-tracker report
   npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
   npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
   npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
@@ -53,7 +54,12 @@ function installSkill(target, skillSource) {
   fs.copyFileSync(path.join(ROOT, skillSource, "SKILL.md"), path.join(dest, "SKILL.md"));
   fs.rmSync(scriptsDest, { recursive: true, force: true });
   fs.mkdirSync(scriptsDest, { recursive: true });
-  for (const file of ["save-token-usage.js", "set-token-context.js", "statusline-token-usage.js"]) {
+  for (const file of [
+    "save-token-usage.js",
+    "set-token-context.js",
+    "statusline-token-usage.js",
+    "report-token-usage.js",
+  ]) {
     const to = path.join(scriptsDest, file);
     fs.copyFileSync(path.join(ROOT, "scripts", file), to);
     fs.chmodSync(to, 0o755);
@@ -127,6 +133,7 @@ function main() {
     return;
   }
   if (cmd === "install") return install(rest);
+  if (cmd === "report") return delegate("report-token-usage.js", rest);
   if (cmd === "save") return delegate("save-token-usage.js", rest);
   if (cmd === "set-context") return delegate("set-token-context.js", rest);
   if (cmd === "statusline") return delegate("statusline-token-usage.js", rest);
