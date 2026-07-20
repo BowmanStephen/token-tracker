@@ -19,7 +19,7 @@ Restart Cursor CLI after install.
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 22+
 - Cursor CLI and/or Claude Code with personal skills enabled
 - Optional: `git`, used to fall back to the current branch as the feature name
 
