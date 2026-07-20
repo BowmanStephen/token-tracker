@@ -1,6 +1,19 @@
-# Token Tracker
+<p align="center">
+  <img src="docs/logos/token-tracker.png" alt="token-tracker" width="520" />
+</p>
 
-**Local token usage tracking for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts** — snapshot AI spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
+<p align="center">
+  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts — snapshot AI spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
+</p>
+
+<p align="center">
+  <img src="docs/logos/cursor.png" alt="Cursor" height="44" />
+  <img src="docs/logos/claude.png" alt="Claude Code" height="44" />
+  <img src="docs/logos/gemini.png" alt="Gemini CLI" height="44" />
+  <img src="docs/logos/codex.png" alt="Codex CLI" height="44" />
+  <img src="docs/logos/continue.png" alt="Continue" height="44" />
+  <img src="docs/logos/agents.png" alt="Agent Skills" height="44" />
+</p>
 
 No npm dependencies. Shared data stays on your machine under `~/.cursor/token-tracker/` so every host contributes to one history.
 
@@ -52,15 +65,15 @@ npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 
 ### Supported hosts
 
-| Flag | Host | Skill path | Extra |
-| --- | --- | --- | --- |
-| `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine` wiring |
-| `--claude` | Claude Code | `~/.claude/skills/token-tracker` | |
-| `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` custom command |
-| `--codex` | Codex CLI | `~/.codex/skills/token-tracker` | Invoke with `$token-tracker` / skills UI |
-| `--agents` | Agent Skills standard | `~/.agents/skills/token-tracker` | Shared path used by Gemini and other tools |
-| `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
-| `--all` | All of the above | | Includes Cursor `statusLine` by default |
+| | Flag | Host | Skill path | Extra |
+| --- | --- | --- | --- | --- |
+| <img src="docs/logos/cursor.png" alt="Cursor" height="28" /> | `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine` wiring |
+| <img src="docs/logos/claude.png" alt="Claude Code" height="28" /> | `--claude` | Claude Code | `~/.claude/skills/token-tracker` | |
+| <img src="docs/logos/gemini.png" alt="Gemini CLI" height="28" /> | `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` custom command |
+| <img src="docs/logos/codex.png" alt="Codex CLI" height="28" /> | `--codex` | Codex CLI | `~/.codex/skills/token-tracker` | Invoke with `$token-tracker` / skills UI |
+| <img src="docs/logos/agents.png" alt="Agent Skills" height="28" /> | `--agents` | Agent Skills standard | `~/.agents/skills/token-tracker` | Shared path used by Gemini and other tools |
+| <img src="docs/logos/continue.png" alt="Continue" height="28" /> | `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
+| <img src="docs/logos/icon.png" alt="All hosts" height="28" /> | `--all` | All of the above | | Includes Cursor `statusLine` by default |
 
 **After install**
 
@@ -246,6 +259,7 @@ Override paths with `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_
 | `templates/` | Skill + Gemini command templates used by `install` |
 | `cursor/`, `claude/`, `gemini/`, `codex/`, `agents/`, `continue/` | Checked-in `SKILL.md` copies per host |
 | `docs/screenshots/` | README terminal demos |
+| `docs/logos/` | Host badges + project wordmark |
 
 ## Publish (maintainers)
 
