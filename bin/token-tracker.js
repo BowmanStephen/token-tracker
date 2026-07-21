@@ -172,6 +172,56 @@ function ensurePrices() {
   return { created: false, pricesPath, migration };
 }
 
+function shellSingleQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+/**
+ * Install a PATH-friendly `token-tracker` command under ~/.local/bin so shells
+ * and agents do not hit `token-tracker: command not found`.
+ * Shared CLI lives in ~/.token-tracker/cli/ (agent-neutral).
+ */
+function installPathLauncher() {
+  const cliRoot = path.join(DATA_DIR, "cli");
+  const cliBinDir = path.join(cliRoot, "bin");
+  const cliScriptsDir = path.join(cliRoot, "scripts");
+  const cliTemplatesDir = path.join(cliRoot, "templates");
+  fs.mkdirSync(cliBinDir, { recursive: true });
+  fs.mkdirSync(cliScriptsDir, { recursive: true });
+  fs.mkdirSync(cliTemplatesDir, { recursive: true });
+
+  const cliJs = path.join(cliBinDir, "token-tracker.js");
+  fs.copyFileSync(path.join(ROOT, "bin", "token-tracker.js"), cliJs);
+  fs.chmodSync(cliJs, 0o755);
+
+  for (const file of SCRIPT_FILES) {
+    const to = path.join(cliScriptsDir, file);
+    fs.copyFileSync(path.join(ROOT, "scripts", file), to);
+    fs.chmodSync(to, 0o755);
+  }
+
+  for (const name of fs.readdirSync(path.join(ROOT, "templates"))) {
+    fs.copyFileSync(path.join(ROOT, "templates", name), path.join(cliTemplatesDir, name));
+  }
+
+  const localBin = path.join(os.homedir(), ".local", "bin");
+  fs.mkdirSync(localBin, { recursive: true });
+  const launcher = path.join(localBin, "token-tracker");
+  const body = `#!/usr/bin/env bash
+set -euo pipefail
+exec node ${shellSingleQuote(cliJs)} "$@"
+`;
+  fs.writeFileSync(launcher, body, { mode: 0o755 });
+  return { launcher, cliJs, cliRoot, localBin };
+}
+
+function pathHasLocalBin(localBin) {
+  const pathEnv = process.env.PATH || "";
+  const parts = pathEnv.split(path.delimiter).filter(Boolean);
+  const resolved = path.resolve(localBin);
+  return parts.some((p) => path.resolve(p) === resolved);
+}
+
 function renderTemplate(template, vars) {
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
     // Leave unknown placeholders alone (e.g. Gemini CLI {{args}}).
@@ -251,9 +301,10 @@ function patchCliStatusLine(scriptPath) {
     return false;
   }
   const config = JSON.parse(fs.readFileSync(cliConfig, "utf8"));
+  // Prefix with node so Cursor's shell does not rely on the shebang alone.
   config.statusLine = {
     type: "command",
-    command: scriptPath,
+    command: `node ${shellSingleQuote(scriptPath)}`,
     padding: 2,
     timeoutMs: 1000,
   };
@@ -294,6 +345,7 @@ function install(argv) {
   const installed = keys.map((key) => installSkill(key));
   const { created, configPath, migration } = ensureConfig();
   const { created: pricesCreated, pricesPath } = ensurePrices();
+  const pathLauncher = installPathLauncher();
   const pricePull = schedulePricePullIfStale({
     pricesPath,
     source: "openrouter",
@@ -324,6 +376,10 @@ function install(argv) {
   if (pricePull.scheduled) {
     notes.push("Fetching latest model prices in the background (also auto-refreshes hourly on report/statusline).");
   }
+  notes.push(`CLI available as ${pathLauncher.launcher} (run: token-tracker report).`);
+  if (!pathHasLocalBin(pathLauncher.localBin)) {
+    notes.push(`Add ${pathLauncher.localBin} to your PATH if \`token-tracker\` is not found.`);
+  }
   if (keys.includes("gemini")) notes.push("In Gemini CLI run /commands reload and /skills reload.");
   if (keys.includes("cursor") || keys.includes("claude")) {
     notes.push("Cursor/Claude: /set-feature is available after install (reload chat if needed).");
@@ -349,6 +405,8 @@ function install(argv) {
         prices: pricesPath,
         prices_created: pricesCreated,
         prices_pull_scheduled: Boolean(pricePull.scheduled),
+        cli: pathLauncher.cliJs,
+        cli_launcher: pathLauncher.launcher,
         migrated_from_cursor: Boolean(migration && migration.migrated),
         statusline: statuslinePath,
         statusline_wired: statuslineWired,
@@ -431,6 +489,13 @@ function main() {
   process.exit(2);
 }
 
-module.exports = { TARGETS, selectedTargets, renderTemplate };
+module.exports = {
+  TARGETS,
+  selectedTargets,
+  renderTemplate,
+  installPathLauncher,
+  shellSingleQuote,
+  pathHasLocalBin,
+};
 
 if (require.main === module) main();
