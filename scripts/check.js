@@ -36,15 +36,24 @@ assert.deepStrictEqual(selectedTargets(["--claude", "--gemini"]), ["claude", "ge
 assert.deepStrictEqual(selectedTargets(["--all"]), Object.keys(TARGETS));
 assert.ok(TARGETS.gemini.geminiCommand);
 assert.ok(TARGETS.cursor.statusline);
+assert.ok(TARGETS.cursor.slashCommandDir);
+assert.ok(TARGETS.claude.slashCommandDir);
 
 assert.strictEqual(
   renderTemplate("hi {{NAME}}", { NAME: "world" }),
   "hi world",
 );
+assert.strictEqual(
+  renderTemplate("keep {{args}} and {{SET}}", { SET: "ok" }),
+  "keep {{args}} and ok",
+);
 
 const template = fs.readFileSync(path.join(__dirname, "..", "templates", "SKILL.md"), "utf8");
 assert.ok(template.includes("{{SKILL_BIN}}"));
+assert.ok(template.includes("set-feature"));
 assert.ok(fs.existsSync(path.join(__dirname, "..", "templates", "gemini-command.toml")));
+assert.ok(fs.existsSync(path.join(__dirname, "..", "templates", "gemini-set-feature.toml")));
+assert.ok(fs.existsSync(path.join(__dirname, "..", "templates", "set-feature.md")));
 assert.ok(fs.existsSync(path.join(__dirname, "..", "templates", "prices.json")));
 
 for (const key of Object.keys(TARGETS)) {
@@ -150,6 +159,54 @@ assert.strictEqual(pathsFresh.resolveDataDir(), path.join(home, ".token-tracker"
 process.env.HOME = prevHome;
 delete require.cache[require.resolve("./paths.js")];
 fs.rmSync(home, { recursive: true, force: true });
+
+// Install writes /set-feature slash commands for Cursor, Claude, and Gemini
+const installHome = fs.mkdtempSync(path.join(os.tmpdir(), "tt-install-"));
+const prevHome2 = process.env.HOME;
+process.env.HOME = installHome;
+fs.mkdirSync(path.join(installHome, ".cursor"), { recursive: true });
+fs.writeFileSync(path.join(installHome, ".cursor", "cli-config.json"), "{}\n", "utf8");
+const installResult = require("child_process").spawnSync(
+  process.execPath,
+  [path.join(__dirname, "..", "bin", "token-tracker.js"), "install", "--cursor", "--claude", "--gemini", "--no-statusline"],
+  { encoding: "utf8", env: { ...process.env, HOME: installHome } },
+);
+assert.strictEqual(installResult.status, 0, installResult.stderr || installResult.stdout);
+assert.ok(fs.existsSync(path.join(installHome, ".cursor", "commands", "set-feature.md")));
+assert.ok(fs.existsSync(path.join(installHome, ".claude", "commands", "set-feature.md")));
+assert.ok(fs.existsSync(path.join(installHome, ".gemini", "commands", "set-feature.toml")));
+assert.ok(fs.existsSync(path.join(installHome, ".gemini", "commands", "token-tracker.toml")));
+const cursorCmd = fs.readFileSync(path.join(installHome, ".cursor", "commands", "set-feature.md"), "utf8");
+assert.ok(cursorCmd.includes("set-token-context.js"));
+assert.ok(cursorCmd.includes("~/.cursor/skills/token-tracker/scripts"));
+const geminiSet = fs.readFileSync(path.join(installHome, ".gemini", "commands", "set-feature.toml"), "utf8");
+assert.ok(geminiSet.includes("{{args}}"));
+assert.ok(geminiSet.includes("set-token-context.js"));
+
+const setFeature = require("child_process").spawnSync(
+  process.execPath,
+  [
+    path.join(__dirname, "..", "bin", "token-tracker.js"),
+    "set-feature",
+    "slash-demo",
+    "--workspace",
+    path.join(installHome, "proj"),
+  ],
+  {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      HOME: installHome,
+      TOKEN_TRACKER_HOME: path.join(installHome, ".token-tracker"),
+    },
+  },
+);
+assert.strictEqual(setFeature.status, 0, setFeature.stderr || setFeature.stdout);
+const setOut = JSON.parse(setFeature.stdout);
+assert.strictEqual(setOut.feature, "slash-demo");
+assert.strictEqual(setOut.tokens_reset, true);
+process.env.HOME = prevHome2;
+fs.rmSync(installHome, { recursive: true, force: true });
 
 assert.strictEqual(cleanKey("OpenAI: GPT-5.5"), "gpt-5.5");
 const pulled = parseOpenRouter({

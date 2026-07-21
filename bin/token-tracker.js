@@ -11,6 +11,8 @@ const ROOT = path.resolve(__dirname, "..");
 const DATA_DIR = resolveDataDir();
 const TEMPLATE_SKILL = path.join(ROOT, "templates", "SKILL.md");
 const TEMPLATE_GEMINI_CMD = path.join(ROOT, "templates", "gemini-command.toml");
+const TEMPLATE_GEMINI_SET_FEATURE = path.join(ROOT, "templates", "gemini-set-feature.toml");
+const TEMPLATE_SET_FEATURE = path.join(ROOT, "templates", "set-feature.md");
 
 const DEFAULT_CONFIG = {
   default_project: null,
@@ -34,18 +36,29 @@ const DEFAULT_CONFIG = {
   },
 };
 
-/** @type {Record<string, { flag: string, skillDir: string, label: string, statusline?: boolean, geminiCommand?: boolean }>} */
+/**
+ * @type {Record<string, {
+ *   flag: string,
+ *   skillDir: string,
+ *   label: string,
+ *   statusline?: boolean,
+ *   geminiCommand?: boolean,
+ *   slashCommandDir?: string,
+ * }>}
+ */
 const TARGETS = {
   cursor: {
     flag: "--cursor",
     skillDir: ".cursor/skills",
     label: "Cursor",
     statusline: true,
+    slashCommandDir: ".cursor/commands",
   },
   claude: {
     flag: "--claude",
     skillDir: ".claude/skills",
     label: "Claude Code",
+    slashCommandDir: ".claude/commands",
   },
   gemini: {
     flag: "--gemini",
@@ -86,15 +99,17 @@ function usage() {
   npx @mbrundige/token-tracker report
   npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
   npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
+  npx @mbrundige/token-tracker set-feature NAME [--workspace PATH]
+  npx @mbrundige/token-tracker set-feature --clear [--workspace PATH]
   npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
   npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
   npx @mbrundige/token-tracker prices show
 
 Install targets:
   --all                 Cursor, Claude, Gemini, Codex, Agent Skills, Continue
-  --cursor              Cursor skill (default when no target flags are set)
-  --claude              Claude Code skill
-  --gemini              Gemini CLI skill + /token-tracker custom command
+  --cursor              Cursor skill + /set-feature slash command (default when no target flags)
+  --claude              Claude Code skill + /set-feature slash command
+  --gemini              Gemini CLI skill + /token-tracker and /set-feature commands
   --codex               Codex CLI skill
   --agents              Shared Agent Skills path (~/.agents/skills)
   --continue            Continue CLI skill
@@ -127,8 +142,9 @@ function ensurePrices() {
 }
 
 function renderTemplate(template, vars) {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
-    if (!(key in vars)) throw new Error(`missing template var: ${key}`);
+  return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    // Leave unknown placeholders alone (e.g. Gemini CLI {{args}}).
+    if (!(key in vars)) return match;
     return vars[key];
   });
 }
@@ -155,22 +171,46 @@ function installSkill(targetKey) {
 
   const extras = {};
   if (target.geminiCommand) {
-    extras.gemini_command = installGeminiCommand(dest);
+    extras.gemini_commands = installGeminiCommands(dest);
+  }
+  if (target.slashCommandDir) {
+    extras.set_feature_command = installMarkdownSetFeatureCommand(
+      target.slashCommandDir,
+      skillBin,
+    );
   }
   return { dest, label: target.label, ...extras };
 }
 
-function installGeminiCommand(skillRoot) {
+function installMarkdownSetFeatureCommand(commandsDirRel, skillBin) {
+  const commandsDir = path.join(os.homedir(), commandsDirRel);
+  fs.mkdirSync(commandsDir, { recursive: true });
+  const body = renderTemplate(fs.readFileSync(TEMPLATE_SET_FEATURE, "utf8"), {
+    SKILL_BIN: skillBin,
+  });
+  const dest = path.join(commandsDir, "set-feature.md");
+  fs.writeFileSync(dest, body, "utf8");
+  return dest;
+}
+
+function installGeminiCommands(skillRoot) {
   const commandsDir = path.join(os.homedir(), ".gemini", "commands");
   fs.mkdirSync(commandsDir, { recursive: true });
   const reportScript = path.join(skillRoot, "scripts", "report-token-usage.js");
-  const body = renderTemplate(fs.readFileSync(TEMPLATE_GEMINI_CMD, "utf8"), {
+  const setScript = path.join(skillRoot, "scripts", "set-token-context.js");
+  const reportBody = renderTemplate(fs.readFileSync(TEMPLATE_GEMINI_CMD, "utf8"), {
     SKILL_ROOT: skillRoot,
     REPORT_SCRIPT: reportScript,
   });
-  const dest = path.join(commandsDir, "token-tracker.toml");
-  fs.writeFileSync(dest, body, "utf8");
-  return dest;
+  const setBody = renderTemplate(fs.readFileSync(TEMPLATE_GEMINI_SET_FEATURE, "utf8"), {
+    SKILL_ROOT: skillRoot,
+    SET_SCRIPT: setScript,
+  });
+  const reportDest = path.join(commandsDir, "token-tracker.toml");
+  const setDest = path.join(commandsDir, "set-feature.toml");
+  fs.writeFileSync(reportDest, reportBody, "utf8");
+  fs.writeFileSync(setDest, setBody, "utf8");
+  return [reportDest, setDest];
 }
 
 function patchCliStatusLine(scriptPath) {
@@ -246,6 +286,9 @@ function install(argv) {
   if (statuslineWired) notes.push("Restart Cursor CLI to pick up statusLine changes.");
   if (pricesCreated) notes.push(`Seeded default price table at ${pricesPath}.`);
   if (keys.includes("gemini")) notes.push("In Gemini CLI run /commands reload and /skills reload.");
+  if (keys.includes("cursor") || keys.includes("claude")) {
+    notes.push("Cursor/Claude: /set-feature is available after install (reload chat if needed).");
+  }
   if (keys.includes("codex") || keys.includes("agents") || keys.includes("continue")) {
     notes.push("Restart Codex/Continue (or reload skills) if the new skill does not appear.");
   }
@@ -256,7 +299,10 @@ function install(argv) {
         installed: installed.map((item) => ({
           label: item.label,
           path: item.dest,
-          ...(item.gemini_command ? { gemini_command: item.gemini_command } : {}),
+          ...(item.gemini_commands ? { gemini_commands: item.gemini_commands } : {}),
+          ...(item.set_feature_command
+            ? { set_feature_command: item.set_feature_command }
+            : {}),
         })),
         data_dir: DATA_DIR,
         config: configPath,
@@ -272,6 +318,49 @@ function install(argv) {
       2,
     ),
   );
+}
+
+function normalizeSetFeatureArgs(argv) {
+  const out = [];
+  let sawFeature = false;
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === "--clear" || a === "--clear-feature") {
+      out.push("--clear-feature");
+      continue;
+    }
+    if (a === "--feature") {
+      out.push("--feature", argv[++i]);
+      sawFeature = true;
+      continue;
+    }
+    if (a === "--workspace") {
+      out.push("--workspace", argv[++i]);
+      continue;
+    }
+    if (a === "--project") {
+      out.push("--project", argv[++i]);
+      continue;
+    }
+    if (a.startsWith("-")) {
+      console.error(`token-tracker: unknown set-feature option: ${a}`);
+      usage();
+      process.exit(2);
+    }
+    if (sawFeature) {
+      console.error(`token-tracker: unexpected argument: ${a}`);
+      usage();
+      process.exit(2);
+    }
+    out.push("--feature", a);
+    sawFeature = true;
+  }
+  if (!sawFeature && !out.includes("--clear-feature")) {
+    console.error("token-tracker: set-feature requires a feature name (or --clear)");
+    usage();
+    process.exit(2);
+  }
+  return out;
 }
 
 function delegate(scriptName, argv) {
@@ -290,6 +379,7 @@ function main() {
   if (cmd === "report") return delegate("report-token-usage.js", rest);
   if (cmd === "save") return delegate("save-token-usage.js", rest);
   if (cmd === "set-context") return delegate("set-token-context.js", rest);
+  if (cmd === "set-feature") return delegate("set-token-context.js", normalizeSetFeatureArgs(rest));
   if (cmd === "statusline") return delegate("statusline-token-usage.js", rest);
   if (cmd === "prices") {
     const script = path.join(ROOT, "scripts", "pull-prices.js");

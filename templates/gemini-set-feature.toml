@@ -1,0 +1,29 @@
+# Invoked via: /set-feature
+description = "Set (or clear) the token-tracker feature for the current workspace."
+
+prompt = """
+Set the token-tracker feature for the current workspace.
+
+User input after /set-feature: {{args}}
+
+1. Resolve the feature name from that input.
+   - If they said clear, none, or off (or asked to clear), clear the feature.
+   - If the input is empty, ask once for a name and suggest the current git branch (`git branch --show-current`).
+2. Run ONE of:
+
+Set:
+```
+node "{{SET_SCRIPT}}" --workspace "$PWD" --feature "<name>"
+```
+
+Clear:
+```
+node "{{SET_SCRIPT}}" --workspace "$PWD" --clear-feature
+```
+
+3. Show the JSON result to the user.
+4. Tell them the status-line toks counter resets for this scope when the feature changes.
+5. Do not run the full token report unless they also ask for it.
+
+Scripts live under `{{SKILL_ROOT}}/scripts/`.
+"""

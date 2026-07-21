@@ -41,8 +41,11 @@ function parseArgs(argv) {
     if (a === "--workspace") args.workspace = next();
     else if (a === "--project") args.project = next();
     else if (a === "--feature") args.feature = next();
-    else if (a === "--clear-feature") args.clearFeature = true;
-    else {
+    else if (a === "--clear-feature" || a === "--clear") args.clearFeature = true;
+    else if (!a.startsWith("-") && args.feature == null && !args.clearFeature) {
+      // Positional feature name: set-token-context.js maintenance
+      args.feature = a;
+    } else {
       console.error(`token-tracker: unknown argument: ${a}`);
       process.exit(2);
     }

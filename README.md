@@ -40,7 +40,8 @@ Switching project or feature resets the status-line counter for that scope, so e
 - **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
 - **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
 - **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
-- **Gemini custom command** — installs `~/.gemini/commands/token-tracker.toml` for `/token-tracker`
+- **`/set-feature` slash command** — label the current workspace feature from chat (Cursor, Claude, Gemini)
+- **Gemini custom commands** — `/token-tracker` and `/set-feature` under `~/.gemini/commands/`
 - **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
 - **Estimated cost per feature** — from `prices.json` rates × prompt/completion deltas (epoch-aware)
 - **Epoch-aware totals** — feature resets do not double-count growing snapshots
@@ -68,9 +69,9 @@ npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 
 | | Flag | Host | Skill path | Extra |
 | --- | --- | --- | --- | --- |
-| <img src="docs/logos/cursor.png" alt="Cursor" height="28" /> | `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine` wiring |
-| <img src="docs/logos/claude.png" alt="Claude Code" height="28" /> | `--claude` | Claude Code | `~/.claude/skills/token-tracker` | |
-| <img src="docs/logos/gemini.png" alt="Gemini CLI" height="28" /> | `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` custom command |
+| <img src="docs/logos/cursor.png" alt="Cursor" height="28" /> | `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine`; installs `/set-feature` |
+| <img src="docs/logos/claude.png" alt="Claude Code" height="28" /> | `--claude` | Claude Code | `~/.claude/skills/token-tracker` | Installs `/set-feature` |
+| <img src="docs/logos/gemini.png" alt="Gemini CLI" height="28" /> | `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` and `/set-feature` commands |
 | <img src="docs/logos/codex.png" alt="Codex CLI" height="28" /> | `--codex` | Codex CLI | `~/.codex/skills/token-tracker` | Invoke with `$token-tracker` / skills UI |
 | <img src="docs/logos/agents.png" alt="Agent Skills" height="28" /> | `--agents` | Agent Skills standard | `~/.agents/skills/token-tracker` | Shared path used by Gemini and other tools |
 | <img src="docs/logos/continue.png" alt="Continue" height="28" /> | `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
@@ -106,6 +107,21 @@ npx @mbrundige/token-tracker set-context \
   --feature "readme-demos"
 ```
 
+Or set only the feature (CLI or slash command):
+
+```bash
+npx @mbrundige/token-tracker set-feature readme-demos
+npx @mbrundige/token-tracker set-feature --clear
+```
+
+In chat:
+
+| Host | Command |
+| --- | --- |
+| Cursor | `/set-feature checkout-v2` (installs `~/.cursor/commands/set-feature.md`) |
+| Claude Code | `/set-feature checkout-v2` (installs `~/.claude/commands/set-feature.md`) |
+| Gemini CLI | `/set-feature checkout-v2` (installs `~/.gemini/commands/set-feature.toml`) |
+
 <p align="center">
   <img src="docs/screenshots/set-context.png" alt="token-tracker set-context output" width="720" />
 </p>
@@ -140,8 +156,8 @@ In chat, invoke the skill:
 
 | Host | How |
 | --- | --- |
-| Cursor / Claude Code / Continue | `/token-tracker` (skill) |
-| Gemini CLI | `/token-tracker` (custom command) or skill activation |
+| Cursor / Claude Code / Continue | `/token-tracker` (skill); Cursor/Claude also get `/set-feature` |
+| Gemini CLI | `/token-tracker` and `/set-feature` custom commands (or skill activation) |
 | Codex CLI | `$token-tracker` or skills UI |
 
 History file (shared by all hosts):
@@ -275,6 +291,8 @@ npx @mbrundige/token-tracker install [--all] [--cursor] [--claude] [--gemini] [-
 npx @mbrundige/token-tracker report
 npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
 npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
+npx @mbrundige/token-tracker set-feature NAME [--workspace PATH]
+npx @mbrundige/token-tracker set-feature --clear [--workspace PATH]
 npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
 npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
 npx @mbrundige/token-tracker prices show
@@ -317,7 +335,10 @@ node scripts/check.js
 | `~/.token-tracker/config.json` | Project/feature map + status line options |
 | `~/.token-tracker/history.jsonl` | Append-only usage snapshots (all hosts) |
 | `~/.token-tracker/prices.json` | Model rate table for estimated cost (seeded on install) |
+| `~/.cursor/commands/set-feature.md` | Cursor `/set-feature` slash command (when `--cursor`) |
+| `~/.claude/commands/set-feature.md` | Claude Code `/set-feature` slash command (when `--claude`) |
 | `~/.gemini/commands/token-tracker.toml` | Gemini `/token-tracker` custom command (when `--gemini`) |
+| `~/.gemini/commands/set-feature.toml` | Gemini `/set-feature` custom command (when `--gemini`) |
 
 On first run / install, if `~/.token-tracker/` is empty and legacy `~/.cursor/token-tracker/` has data, files are copied over (legacy folder is left in place).
 
@@ -327,9 +348,9 @@ Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER
 
 | Path | Role |
 | --- | --- |
-| `bin/token-tracker.js` | npx CLI (`install`, `save`, `set-context`, `statusline`, `report`) |
+| `bin/token-tracker.js` | npx CLI (`install`, `save`, `set-context`, `set-feature`, `statusline`, `report`) |
 | `scripts/` | Shared Node helpers (`pricing.js`, report, statusline, …) |
-| `templates/` | Skill, Gemini command, and default `prices.json` templates used by `install` |
+| `templates/` | Skill, slash-command, Gemini command, and default `prices.json` templates used by `install` |
 | `.github/workflows/` | CI checks + npm publish on `v*` tags |
 | `cursor/`, `claude/`, `gemini/`, `codex/`, `agents/`, `continue/` | Checked-in `SKILL.md` copies per host |
 | `docs/screenshots/` | README terminal demos |
@@ -351,7 +372,7 @@ git push origin "v${VERSION}"
 
 The [Publish npm](.github/workflows/publish-npm.yml) workflow then:
 
-- checks that the tag (`v0.5.0`) matches `package.json`
+- checks that the tag (`v0.6.0`) matches `package.json`
 - runs `node scripts/check.js`
 - runs `npm publish --access public --provenance`
 - creates a GitHub Release with generated notes

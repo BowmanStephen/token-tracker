@@ -1,6 +1,6 @@
 ---
 name: token-tracker
-description: Saves local token usage snapshots and reports token usage by feature with a daily heat map. Use when the user invokes /token-tracker or $token-tracker; asks to save, record, dump, log, or track token usage/history; wants a usage breakdown or heat map; discusses token usage or cost; or wants to label the current project or feature.
+description: Saves local token usage snapshots and reports token usage by feature with a daily heat map. Use when the user invokes /token-tracker, $token-tracker, /set-feature, or $set-feature; asks to save, record, dump, log, or track token usage/history; wants a usage breakdown or heat map; discusses token usage or cost; or wants to label the current project or feature.
 ---
 
 # Token Tracker
@@ -22,6 +22,30 @@ Present the report as-is (feature breakdown + GitHub-style daily heat map). Then
 Default to not saving if they do not answer.
 
 If the invoke includes an explicit ask (e.g. set feature, save, enable status line), do that instead of or in addition to the report.
+
+## Slash / skill invoke: set-feature
+
+When the user invokes `/set-feature` or `$set-feature` (or asks to set/label the current feature):
+
+1. Resolve the feature name from text after the command.
+   - If they said `clear`, `none`, or `off`, clear the feature.
+   - If no name was given, ask once. Suggest the current git branch as the default.
+2. Run:
+
+```bash
+~/.gemini/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --feature "<name>"
+```
+
+Or to clear:
+
+```bash
+~/.gemini/skills/token-tracker/scripts/set-token-context.js --workspace "$PWD" --clear-feature
+```
+
+3. Show the JSON result. Mention that status-line `toks` resets for this scope when the feature changes.
+4. Do **not** run the full report unless they also ask for it.
+
+On Cursor and Claude Code, install also writes a `/set-feature` slash command under `~/.cursor/commands/` or `~/.claude/commands/`. Gemini gets `~/.gemini/commands/set-feature.toml`.
 
 ## When To Prompt (manual save)
 
