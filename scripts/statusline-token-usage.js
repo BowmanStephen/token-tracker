@@ -5,18 +5,16 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const {
+  loadPrices,
+  formatCost,
+  computeCostDelta,
+  featureOngoingCost,
+} = require("./pricing.js");
+const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
+const { paths } = require("./paths.js");
 
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
-
-function resolvePath(envKey, fallback) {
-  const raw = process.env[envKey] || fallback;
-  if (raw.startsWith("~/")) return path.join(os.homedir(), raw.slice(2));
-  return raw;
-}
-
-const HISTORY_PATH = resolvePath("TOKEN_TRACKER_HISTORY", path.join(DATA_DIR, "history.jsonl"));
-const CONFIG_PATH = resolvePath("TOKEN_TRACKER_CONFIG", path.join(DATA_DIR, "config.json"));
-const PRICES_PATH = resolvePath("TOKEN_TRACKER_PRICES", path.join(DATA_DIR, "prices.json"));
+const { historyPath: HISTORY_PATH, configPath: CONFIG_PATH, pricesPath: PRICES_PATH } = paths();
 
 function loadJsonFile(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -166,7 +164,19 @@ function appendHistory(row) {
   fs.appendFileSync(HISTORY_PATH, `${JSON.stringify(row)}\n`, "utf8");
 }
 
-function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, outputTokens, usedPct) {
+function lastScopeSnapshot(rows, project, feature) {
+  let last = null;
+  const scopeFeature = feature || null;
+  for (const row of rows) {
+    if (String(row.project || "") !== String(project || "")) continue;
+    const rowFeature = row.feature == null || row.feature === "" ? null : String(row.feature);
+    if (rowFeature !== scopeFeature) continue;
+    last = row;
+  }
+  return last;
+}
+
+function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, outputTokens, usedPct, prices) {
   const totalTokens = inputTokens + outputTokens;
   if (totalTokens <= 0) return false;
   const sessionKey = String(payload.session_id || payload.transcript_path || "unknown-session");
@@ -174,6 +184,18 @@ function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, o
   for (const row of rows) {
     if (row.metadata && row.metadata.auto_key === autoKey) return false;
   }
+
+  const current = {
+    project,
+    feature,
+    model,
+    prompt_tokens: inputTokens,
+    completion_tokens: outputTokens,
+    total_tokens: totalTokens,
+  };
+  const previous = lastScopeSnapshot(rows, project, feature);
+  const priced = computeCostDelta(previous, current, prices);
+
   const snapshot = {
     timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
     project,
@@ -188,9 +210,17 @@ function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, o
       session_id: payload.session_id || null,
       transcript_path: payload.transcript_path || null,
       used_percentage: usedPct,
+      cost_locked: priced.costDeltaUsd != null,
     },
   };
   if (feature) snapshot.feature = feature;
+  if (priced.costDeltaUsd != null && Number.isFinite(priced.costDeltaUsd)) {
+    snapshot.cost_delta_usd = Number(priced.costDeltaUsd.toFixed(6));
+  }
+  if (priced.estimatedCostUsd != null && Number.isFinite(priced.estimatedCostUsd)) {
+    snapshot.estimated_cost_usd = Number(priced.estimatedCostUsd.toFixed(6));
+  }
+  if (priced.rates) snapshot.cost_rates = priced.rates;
   appendHistory(snapshot);
   return true;
 }
@@ -210,39 +240,6 @@ function contextBar(usedPct) {
   return `ctx [${"#".repeat(filled)}${".".repeat(width - filled)}] ${clamped}%`;
 }
 
-function parseRates(rates) {
-  try {
-    return [Number(rates.input_per_million_usd), Number(rates.output_per_million_usd)];
-  } catch {
-    return null;
-  }
-}
-
-function ratesForModel(prices, model) {
-  const models = prices.models;
-  if (models && typeof models === "object") {
-    const modelLower = model.toLowerCase();
-    for (const [pattern, rates] of Object.entries(models)) {
-      if (modelLower.includes(String(pattern).toLowerCase()) && rates && typeof rates === "object") {
-        const parsed = parseRates(rates);
-        if (parsed && !Number.isNaN(parsed[0]) && !Number.isNaN(parsed[1])) return parsed;
-      }
-    }
-  }
-  if (prices.default && typeof prices.default === "object") {
-    const parsed = parseRates(prices.default);
-    if (parsed && !Number.isNaN(parsed[0]) && !Number.isNaN(parsed[1])) return parsed;
-  }
-  return null;
-}
-
-function estimateCost(inputTokens, outputTokens, model) {
-  const rates = ratesForModel(loadJsonFile(PRICES_PATH), model);
-  if (!rates) return "cost unpriced";
-  const cost = (inputTokens / 1_000_000) * rates[0] + (outputTokens / 1_000_000) * rates[1];
-  return `est $${cost.toFixed(4)}`;
-}
-
 function statuslineOptions(config) {
   const options = config.statusline && typeof config.statusline === "object" ? config.statusline : {};
   return {
@@ -253,7 +250,7 @@ function statuslineOptions(config) {
     show_model: options.show_model !== false,
     show_context: options.show_context !== false,
     show_tokens: options.show_tokens !== false,
-    show_cost: options.show_cost === true,
+    show_cost: options.show_cost !== false,
   };
 }
 
@@ -262,6 +259,15 @@ function main() {
   const config = loadJsonFile(CONFIG_PATH);
   const options = statuslineOptions(config);
   if (!options.enabled) return;
+
+  const refresh = priceRefreshOptions(config);
+  if (refresh.autoPull) {
+    schedulePricePullIfStale({
+      pricesPath: PRICES_PATH,
+      source: refresh.source,
+      maxAgeMs: refresh.maxAgeMs,
+    });
+  }
 
   const currentDir = workspaceDirFromPayload(payload);
   const project = projectFromPayload(config, currentDir);
@@ -277,6 +283,7 @@ function main() {
     sessionOut,
   );
 
+  const prices = loadPrices(PRICES_PATH);
   const rows = iterHistory();
   autoSaveSnapshot(
     payload,
@@ -287,6 +294,22 @@ function main() {
     featureTokens.inputTokens,
     featureTokens.outputTokens,
     usedPct,
+    prices,
+  );
+
+  // Re-read after possible append so ongoing cost includes the just-locked delta tip correctly.
+  const rowsAfter = iterHistory();
+  const ongoing = featureOngoingCost(
+    rowsAfter,
+    {
+      project,
+      feature,
+      inputTokens: featureTokens.inputTokens,
+      outputTokens: featureTokens.outputTokens,
+      totalTokens: featureTokens.totalTokens,
+      model,
+    },
+    prices,
   );
 
   const ctx = contextBar(usedPct);
@@ -299,7 +322,7 @@ function main() {
   if (options.show_context) parts.push(ctx);
   if (options.show_tokens) parts.push(toks);
   if (options.show_cost) {
-    parts.push(estimateCost(featureTokens.inputTokens, featureTokens.outputTokens, model));
+    parts.push(formatCost(ongoing.costUsd, { prefix: "$", unpriced: "$?" }));
   }
   console.log(parts.join(" | "));
 }

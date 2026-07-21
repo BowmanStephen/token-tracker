@@ -15,7 +15,7 @@
   <img src="docs/logos/agents.png" alt="Agent Skills" height="44" />
 </p>
 
-No npm dependencies. Shared data stays on your machine under `~/.cursor/token-tracker/` so every host contributes to one history.
+No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.token-tracker/` — so Cursor, Claude, Gemini, Codex, and Continue all contribute to one history.
 
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown and heat map" width="720" />
@@ -38,10 +38,11 @@ Switching project or feature resets the status-line counter for that scope, so e
 ## Features
 
 - **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
-- **Shared history** across hosts (one JSONL ledger under `~/.cursor/token-tracker/`)
+- **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
 - **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
 - **Gemini custom command** — installs `~/.gemini/commands/token-tracker.toml` for `/token-tracker`
-- **Feature-scoped status line** — project, feature, model, context bar, token count (Cursor CLI)
+- **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
+- **Estimated cost per feature** — from `prices.json` rates × prompt/completion deltas (epoch-aware)
 - **Epoch-aware totals** — feature resets do not double-count growing snapshots
 - **Zero runtime deps** — plain Node.js 22+ scripts
 
@@ -116,7 +117,7 @@ npx @mbrundige/token-tracker set-context \
 **Feature**
 
 1. `TOKEN_TRACKER_FEATURE`
-2. Workspace path in `~/.cursor/token-tracker/config.json` under `features`
+2. Workspace path in `~/.token-tracker/config.json` under `features`
 3. `default_feature`
 4. Current git branch
 
@@ -133,7 +134,7 @@ npx @mbrundige/token-tracker set-context \
 npx @mbrundige/token-tracker report
 ```
 
-Shows usage by feature (with bar chart) and a daily heat map.
+Shows usage by feature (token bar chart + estimated cost) and a daily heat map.
 
 In chat, invoke the skill:
 
@@ -146,7 +147,7 @@ In chat, invoke the skill:
 History file (shared by all hosts):
 
 ```text
-~/.cursor/token-tracker/history.jsonl
+~/.token-tracker/history.jsonl
 ```
 
 ## Save a snapshot
@@ -171,10 +172,10 @@ You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots 
 Cursor CLI can show a live line like:
 
 ```text
-token-tracker | token-tracker/readme-demos | GPT-5.5 | ctx [###.......] 27% | toks 7.1k
+token-tracker | token-tracker/readme-demos | GPT-5.5 | ctx [###.......] 27% | toks 7.1k | $0.0534
 ```
 
-Configure visible fields in `~/.cursor/token-tracker/config.json`:
+Configure visible fields in `~/.token-tracker/config.json`:
 
 ```json
 {
@@ -186,12 +187,79 @@ Configure visible fields in `~/.cursor/token-tracker/config.json`:
     "show_model": true,
     "show_context": true,
     "show_tokens": true,
-    "show_cost": false
+    "show_cost": true
   }
 }
 ```
 
-Optional estimated cost uses `~/.cursor/token-tracker/prices.json` when `show_cost` is `true`.
+### Estimated cost
+
+Cost is **feature-scoped**, same as `toks`:
+
+1. Status line uses current feature prompt/completion totals × rates for the active model
+2. Report walks history chronologically, prices **positive token deltas** between snapshots, and starts a new epoch when totals drop (feature reset)
+
+Rates live in `~/.token-tracker/prices.json` (seeded on install from `templates/prices.json`):
+
+```json
+{
+  "default": {
+    "input_per_million_usd": 2.5,
+    "output_per_million_usd": 15
+  },
+  "models": {
+    "gpt-5.5": { "input_per_million_usd": 5, "output_per_million_usd": 30 },
+    "claude opus": { "input_per_million_usd": 5, "output_per_million_usd": 25 }
+  }
+}
+```
+
+Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates — Cursor/Claude subscriptions may bill differently, so edit the file to match your reality.
+
+### Pull latest prices
+
+Refresh `prices.json` from a public feed (default: OpenRouter):
+
+```bash
+npx @mbrundige/token-tracker prices pull
+npx @mbrundige/token-tracker prices pull --source llmcosthub
+npx @mbrundige/token-tracker prices show
+```
+
+| Source | URL |
+| --- | --- |
+| `openrouter` (default) | `https://openrouter.ai/api/v1/models` |
+| `llmcosthub` | `https://llmcosthub.com/api/v1/pricing.json` |
+| `benchgecko` | BenchGecko `pricing.json` on GitHub |
+
+Pull writes `~/.token-tracker/prices.json` (with a `.bak` backup), keeps your existing `default` rates, and preserves any model entry marked `"locked": true`.
+
+#### Hourly auto-refresh
+
+New installs enable automatic pulls. While the Cursor status line (or report) runs, if `prices.json` is older than 1 hour, Token Tracker **spawns a background** `prices pull` so the status line stays within its timeout budget. Ongoing cost uses the freshest rates already on disk; the next run picks up the updated file.
+
+```json
+{
+  "prices": {
+    "auto_pull": true,
+    "auto_pull_interval_hours": 1,
+    "source": "openrouter"
+  }
+}
+```
+
+Set `"auto_pull": false` (or `auto_pull_interval_hours: 0`) to disable.
+
+#### Locked-in epoch costs
+
+When a snapshot is saved (status line or `save`), Token Tracker records:
+
+- `cost_delta_usd` — cost of that snapshot's token growth at **then-current** rates
+- `estimated_cost_usd` — cumulative locked cost for the feature epoch
+
+The report **prefers these locked deltas**, so historical feature cost does not drift when prices refresh. Unpriced older rows still fall back to live re-pricing. The status line shows locked history for the feature plus a live tip for tokens beyond the last snapshot (priced at current rates).
+
+Set `"show_cost": false` to hide cost on the status line. The report still prints a cost column whenever prices are available.
 
 Test it manually:
 
@@ -208,6 +276,8 @@ npx @mbrundige/token-tracker report
 npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
 npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
 npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
+npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
+npx @mbrundige/token-tracker prices show
 ```
 
 ## Manual install (from a clone)
@@ -243,20 +313,23 @@ node scripts/check.js
 
 | Path | Purpose |
 | --- | --- |
-| `~/.cursor/token-tracker/config.json` | Project/feature map + status line options |
-| `~/.cursor/token-tracker/history.jsonl` | Append-only usage snapshots (all hosts) |
-| `~/.cursor/token-tracker/prices.json` | Optional model price table for cost estimates |
+| `~/.token-tracker/` | Agent-neutral shared data home (override with `TOKEN_TRACKER_HOME`) |
+| `~/.token-tracker/config.json` | Project/feature map + status line options |
+| `~/.token-tracker/history.jsonl` | Append-only usage snapshots (all hosts) |
+| `~/.token-tracker/prices.json` | Model rate table for estimated cost (seeded on install) |
 | `~/.gemini/commands/token-tracker.toml` | Gemini `/token-tracker` custom command (when `--gemini`) |
 
-Override paths with `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_TRACKER_PRICES`.
+On first run / install, if `~/.token-tracker/` is empty and legacy `~/.cursor/token-tracker/` has data, files are copied over (legacy folder is left in place).
+
+Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_TRACKER_PRICES`.
 
 ## Repo layout
 
 | Path | Role |
 | --- | --- |
 | `bin/token-tracker.js` | npx CLI (`install`, `save`, `set-context`, `statusline`, `report`) |
-| `scripts/` | Shared Node helpers |
-| `templates/` | Skill + Gemini command templates used by `install` |
+| `scripts/` | Shared Node helpers (`pricing.js`, report, statusline, …) |
+| `templates/` | Skill, Gemini command, and default `prices.json` templates used by `install` |
 | `cursor/`, `claude/`, `gemini/`, `codex/`, `agents/`, `continue/` | Checked-in `SKILL.md` copies per host |
 | `docs/screenshots/` | README terminal demos |
 | `docs/logos/` | Host badges + project wordmark |

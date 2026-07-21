@@ -4,19 +4,15 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { loadPrices, computeCostDelta } = require("./pricing.js");
+const { paths, expand: expandHome } = require("./paths.js");
 
-const DEFAULT_HISTORY = path.join(os.homedir(), ".cursor", "token-tracker", "history.jsonl");
+const { historyPath: DEFAULT_HISTORY, pricesPath: DEFAULT_PRICES } = paths();
 const INT_FIELDS = ["prompt_tokens", "completion_tokens", "total_tokens"];
 
 function fail(message) {
   console.error(`token-tracker: ${message}`);
   process.exit(2);
-}
-
-function expandHome(p) {
-  if (!p) return p;
-  if (p.startsWith("~/")) return path.join(os.homedir(), p.slice(2));
-  return p;
 }
 
 function parseArgs(argv) {
@@ -142,6 +138,50 @@ function cleanSnapshot(payload) {
   return snapshot;
 }
 
+function loadHistoryRows(historyPath) {
+  if (!fs.existsSync(historyPath)) return [];
+  const rows = [];
+  for (const line of fs.readFileSync(historyPath, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    try {
+      const row = JSON.parse(line);
+      if (row && typeof row === "object" && !Array.isArray(row)) rows.push(row);
+    } catch {
+      // skip
+    }
+  }
+  return rows;
+}
+
+function lastScopeSnapshot(rows, project, feature) {
+  let last = null;
+  const scopeFeature = feature == null || feature === "" ? null : String(feature);
+  for (const row of rows) {
+    if (String(row.project || "") !== String(project || "")) continue;
+    const rowFeature = row.feature == null || row.feature === "" ? null : String(row.feature);
+    if (rowFeature !== scopeFeature) continue;
+    last = row;
+  }
+  return last;
+}
+
+function lockSnapshotCost(snapshot, historyPath) {
+  if (snapshot.total_tokens == null && snapshot.prompt_tokens == null) return snapshot;
+  const pricesPath = process.env.TOKEN_TRACKER_PRICES ? expandHome(process.env.TOKEN_TRACKER_PRICES) : DEFAULT_PRICES;
+  const prices = loadPrices(pricesPath);
+  const rows = loadHistoryRows(historyPath);
+  const previous = lastScopeSnapshot(rows, snapshot.project, snapshot.feature);
+  const priced = computeCostDelta(previous, snapshot, prices);
+  if (priced.costDeltaUsd != null) snapshot.cost_delta_usd = Number(priced.costDeltaUsd.toFixed(6));
+  if (priced.estimatedCostUsd != null) {
+    snapshot.estimated_cost_usd = Number(priced.estimatedCostUsd.toFixed(6));
+  }
+  if (priced.rates) snapshot.cost_rates = priced.rates;
+  if (!snapshot.metadata || typeof snapshot.metadata !== "object") snapshot.metadata = {};
+  snapshot.metadata.cost_locked = priced.costDeltaUsd != null;
+  return snapshot;
+}
+
 function appendSnapshot(snapshot, historyPath) {
   fs.mkdirSync(path.dirname(historyPath), { recursive: true });
   fs.appendFileSync(historyPath, `${JSON.stringify(snapshot)}\n`, "utf8");
@@ -150,12 +190,13 @@ function appendSnapshot(snapshot, historyPath) {
 function main() {
   const args = parseArgs(process.argv.slice(2));
   const payload = loadPayload(args);
-  const snapshot = cleanSnapshot(payload);
+  let snapshot = cleanSnapshot(payload);
   const historyPath = expandHome(args.history) || DEFAULT_HISTORY;
+  snapshot = lockSnapshotCost(snapshot, historyPath);
   appendSnapshot(snapshot, historyPath);
   console.log(JSON.stringify({ saved: historyPath, snapshot }));
 }
 
 if (require.main === module) main();
 
-module.exports = { cleanSnapshot, loadPayload, parseArgs };
+module.exports = { cleanSnapshot, loadPayload, parseArgs, lockSnapshotCost };

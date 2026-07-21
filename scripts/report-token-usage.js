@@ -4,21 +4,14 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { loadPrices, formatCost, epochFeatureCost } = require("./pricing.js");
+const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
+const { paths, expand } = require("./paths.js");
 
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
-const HISTORY_PATH = process.env.TOKEN_TRACKER_HISTORY
-  ? expand(process.env.TOKEN_TRACKER_HISTORY)
-  : path.join(DATA_DIR, "history.jsonl");
-const CONFIG_PATH = process.env.TOKEN_TRACKER_CONFIG
-  ? expand(process.env.TOKEN_TRACKER_CONFIG)
-  : path.join(DATA_DIR, "config.json");
+const { historyPath: HISTORY_PATH, configPath: CONFIG_PATH, pricesPath: PRICES_PATH } = paths();
 
 const HEAT = ["·", "░", "▒", "▓", "█"];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function expand(p) {
-  return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
-}
 
 function compact(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -57,11 +50,6 @@ function dayKey(iso) {
   return d.toISOString().slice(0, 10);
 }
 
-function utcDate(key) {
-  const [y, m, d] = key.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
-}
-
 /** Sum epoch peaks so feature resets do not double-count growing snapshots. */
 function epochTotal(sortedTotals) {
   if (!sortedTotals.length) return 0;
@@ -80,7 +68,7 @@ function epochTotal(sortedTotals) {
   return sum + peak;
 }
 
-function featureBreakdown(rows) {
+function featureBreakdown(rows, prices) {
   const byFeature = new Map();
   for (const row of rows) {
     const feature = row.feature || "(none)";
@@ -90,6 +78,12 @@ function featureBreakdown(rows) {
     byFeature.get(key).push({
       ts: row.timestamp || "",
       total: Number(row.total_tokens || 0),
+      prompt_tokens: row.prompt_tokens,
+      completion_tokens: row.completion_tokens,
+      total_tokens: row.total_tokens,
+      model: row.model || null,
+      cost_delta_usd: row.cost_delta_usd,
+      estimated_cost_usd: row.estimated_cost_usd,
     });
   }
 
@@ -98,11 +92,16 @@ function featureBreakdown(rows) {
     const [project, feature] = key.split("\t");
     items.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
     const total = epochTotal(items.map((i) => i.total));
+    const costInfo = epochFeatureCost(items, prices, { preferLocked: true });
     const last = items[items.length - 1];
     out.push({
       project,
       feature,
       total,
+      costUsd: costInfo.costUsd,
+      costApproximate: costInfo.approximate,
+      costLockedDeltas: costInfo.lockedDeltas,
+      costLiveDeltas: costInfo.liveDeltas,
       snapshots: items.length,
       last_seen: last ? last.ts : null,
     });
@@ -188,16 +187,41 @@ function renderFeatureTable(features) {
   if (!features.length) return "No token history yet.";
   const lines = ["By feature", "----------"];
   const grand = features.reduce((s, f) => s + f.total, 0);
+  const grandCost = features.reduce((s, f) => s + (f.costUsd || 0), 0);
+  const anyCost = features.some((f) => f.costUsd != null);
+  const anyApprox = features.some((f) => f.costApproximate && f.costUsd != null);
+
   for (const f of features) {
     const label = `${f.project}/${f.feature}`;
     const pct = grand ? Math.round((f.total / grand) * 100) : 0;
     const barWidth = 20;
     const filled = grand ? Math.round((f.total / grand) * barWidth) : 0;
     const bar = `[${"#".repeat(filled)}${".".repeat(barWidth - filled)}]`;
-    lines.push(`${label.padEnd(36, " ")} ${compact(f.total).padStart(7, " ")}  ${String(pct).padStart(3, " ")}%  ${bar}`);
+    const costCell = anyCost
+      ? formatCost(f.costUsd, { prefix: "$", unpriced: "  n/a" }).padStart(8, " ")
+      : null;
+    const approx = f.costApproximate && f.costUsd != null ? "~" : " ";
+    const costPart = costCell != null ? `  ${approx}${costCell}` : "";
+    lines.push(
+      `${label.padEnd(36, " ")} ${compact(f.total).padStart(7, " ")}  ${String(pct).padStart(3, " ")}%${costPart}  ${bar}`,
+    );
   }
   lines.push("");
-  lines.push(`Total tracked: ${compact(grand)} toks across ${features.length} feature(s)`);
+  if (anyCost) {
+    const locked = features.reduce((s, f) => s + (f.costLockedDeltas || 0), 0);
+    const live = features.reduce((s, f) => s + (f.costLiveDeltas || 0), 0);
+    const bits = [];
+    if (locked) bits.push(`${locked} locked`);
+    if (live) bits.push(`${live} live-priced`);
+    if (anyApprox) bits.push("some rows lack prompt/completion split");
+    const note = bits.length ? ` (${bits.join(", ")})` : "";
+    lines.push(
+      `Total tracked: ${compact(grand)} toks / ${formatCost(grandCost)} est across ${features.length} feature(s)${note}`,
+    );
+  } else {
+    lines.push(`Total tracked: ${compact(grand)} toks across ${features.length} feature(s)`);
+    lines.push("Cost: n/a (add ~/.token-tracker/prices.json or run: npx @mbrundige/token-tracker prices pull)");
+  }
   return lines.join("\n");
 }
 
@@ -211,13 +235,24 @@ function currentScope(config) {
 function main() {
   const rows = loadRows();
   const config = loadConfig();
+  const refresh = priceRefreshOptions(config);
+  if (refresh.autoPull) {
+    schedulePricePullIfStale({
+      pricesPath: PRICES_PATH,
+      source: refresh.source,
+      maxAgeMs: refresh.maxAgeMs,
+    });
+  }
+  const prices = loadPrices(PRICES_PATH);
   const scope = currentScope(config);
-  const features = featureBreakdown(rows);
+  const features = featureBreakdown(rows, prices);
   const byDay = dailyTotals(rows);
 
   console.log("Token Tracker Report");
   console.log("====================");
   console.log(`History: ${HISTORY_PATH}`);
+  console.log(`Prices:  ${PRICES_PATH}${fs.existsSync(PRICES_PATH) ? "" : " (missing)"}`);
+  if (prices.updated_at) console.log(`Price as of: ${prices.updated_at}`);
   console.log(
     `Current scope: ${scope.project}${scope.feature ? `/${scope.feature}` : ""}`,
   );
@@ -228,3 +263,5 @@ function main() {
 }
 
 if (require.main === module) main();
+
+module.exports = { featureBreakdown, epochTotal, renderFeatureTable };

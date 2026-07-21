@@ -5,9 +5,10 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { resolveDataDir, ensureDataDir } = require("../scripts/paths.js");
 
 const ROOT = path.resolve(__dirname, "..");
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
+const DATA_DIR = resolveDataDir();
 const TEMPLATE_SKILL = path.join(ROOT, "templates", "SKILL.md");
 const TEMPLATE_GEMINI_CMD = path.join(ROOT, "templates", "gemini-command.toml");
 
@@ -24,7 +25,12 @@ const DEFAULT_CONFIG = {
     show_model: true,
     show_context: true,
     show_tokens: true,
-    show_cost: false,
+    show_cost: true,
+  },
+  prices: {
+    auto_pull: true,
+    auto_pull_interval_hours: 1,
+    source: "openrouter",
   },
 };
 
@@ -69,6 +75,9 @@ const SCRIPT_FILES = [
   "set-token-context.js",
   "statusline-token-usage.js",
   "report-token-usage.js",
+  "pricing.js",
+  "pull-prices.js",
+  "paths.js",
 ];
 
 function usage() {
@@ -78,6 +87,8 @@ function usage() {
   npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
   npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
   npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
+  npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
+  npx @mbrundige/token-tracker prices show
 
 Install targets:
   --all                 Cursor, Claude, Gemini, Codex, Agent Skills, Continue
@@ -95,13 +106,24 @@ Defaults for install: --cursor and --statusline
 }
 
 function ensureConfig() {
-  const configPath = path.join(DATA_DIR, "config.json");
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const { dataDir, migration } = ensureDataDir(DATA_DIR);
+  const configPath = path.join(dataDir, "config.json");
   if (!fs.existsSync(configPath)) {
     fs.writeFileSync(configPath, `${JSON.stringify(DEFAULT_CONFIG, null, 2)}\n`, "utf8");
-    return { created: true, configPath };
+    return { created: true, configPath, migration };
   }
-  return { created: false, configPath };
+  return { created: false, configPath, migration };
+}
+
+function ensurePrices() {
+  const { dataDir, migration } = ensureDataDir(DATA_DIR);
+  const pricesPath = path.join(dataDir, "prices.json");
+  const template = path.join(ROOT, "templates", "prices.json");
+  if (!fs.existsSync(pricesPath)) {
+    fs.copyFileSync(template, pricesPath);
+    return { created: true, pricesPath, migration };
+  }
+  return { created: false, pricesPath, migration };
 }
 
 function renderTemplate(template, vars) {
@@ -199,7 +221,8 @@ function install(argv) {
   const forceStatusline = argv.includes("--statusline");
   const keys = selectedTargets(argv);
   const installed = keys.map((key) => installSkill(key));
-  const { created, configPath } = ensureConfig();
+  const { created, configPath, migration } = ensureConfig();
+  const { created: pricesCreated, pricesPath } = ensurePrices();
 
   const cursorInstall = installed.find((item) => item.dest.includes(`${path.sep}.cursor${path.sep}`));
   const wantsStatusline =
@@ -215,7 +238,13 @@ function install(argv) {
   }
 
   const notes = [];
+  if (migration && migration.migrated) {
+    notes.push(
+      `Migrated shared data from ${migration.legacy} to ${migration.dataDir} (${(migration.copied || []).join(", ") || "files"}).`,
+    );
+  }
   if (statuslineWired) notes.push("Restart Cursor CLI to pick up statusLine changes.");
+  if (pricesCreated) notes.push(`Seeded default price table at ${pricesPath}.`);
   if (keys.includes("gemini")) notes.push("In Gemini CLI run /commands reload and /skills reload.");
   if (keys.includes("codex") || keys.includes("agents") || keys.includes("continue")) {
     notes.push("Restart Codex/Continue (or reload skills) if the new skill does not appear.");
@@ -229,8 +258,12 @@ function install(argv) {
           path: item.dest,
           ...(item.gemini_command ? { gemini_command: item.gemini_command } : {}),
         })),
+        data_dir: DATA_DIR,
         config: configPath,
         config_created: created,
+        prices: pricesPath,
+        prices_created: pricesCreated,
+        migrated_from_cursor: Boolean(migration && migration.migrated),
         statusline: statuslinePath,
         statusline_wired: statuslineWired,
         note: notes.length ? notes.join(" ") : undefined,
@@ -258,6 +291,11 @@ function main() {
   if (cmd === "save") return delegate("save-token-usage.js", rest);
   if (cmd === "set-context") return delegate("set-token-context.js", rest);
   if (cmd === "statusline") return delegate("statusline-token-usage.js", rest);
+  if (cmd === "prices") {
+    const script = path.join(ROOT, "scripts", "pull-prices.js");
+    const result = spawnSync(process.execPath, [script, ...rest], { stdio: "inherit" });
+    process.exit(result.status == null ? 1 : result.status);
+  }
   console.error(`token-tracker: unknown command: ${cmd}`);
   usage();
   process.exit(2);

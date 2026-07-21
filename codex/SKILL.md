@@ -5,7 +5,7 @@ description: Saves local token usage snapshots and reports token usage by featur
 
 # Token Tracker
 
-Works across Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts. Shared history lives under `~/.cursor/token-tracker/`.
+Works across Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts. Shared history lives under `~/.token-tracker/`.
 
 ## Slash / skill invoke: token-tracker
 
@@ -48,7 +48,7 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 ~/.codex/skills/token-tracker/scripts/save-token-usage.js --json '<snapshot-json>'
 ```
 
-3. Tell the user the snapshot was saved to `~/.cursor/token-tracker/history.jsonl`.
+3. Tell the user the snapshot was saved to `~/.token-tracker/history.jsonl`.
 
 ## Snapshot Rules
 
@@ -56,22 +56,22 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 - If token counts are unavailable, save the summary with `source: "manual"` and omit the unknown fields.
 - Status line tokens are feature-scoped: switching project/feature resets the token counter for that scope.
 - Status line snapshots use `source: "statusline"` and store the current feature token total (not full session total).
-- If the user asks for project/feature history, run the report script or summarize `~/.cursor/token-tracker/history.jsonl`. For a feature total, prefer the report (epoch-aware) over naively summing rows.
+- If the user asks for project/feature history, run the report script or summarize `~/.token-tracker/history.jsonl`. For a feature total, prefer the report (epoch-aware) over naively summing rows.
 
 ## Project And Feature Names
 
 Project names resolve in this order:
 
 1. `TOKEN_TRACKER_PROJECT` environment variable.
-2. Exact workspace path in `~/.cursor/token-tracker/config.json` under `projects`.
-3. `default_project` in `~/.cursor/token-tracker/config.json`.
+2. Exact workspace path in `~/.token-tracker/config.json` under `projects`.
+3. `default_project` in `~/.token-tracker/config.json`.
 4. Current workspace folder name.
 
 Feature names resolve in this order:
 
 1. `TOKEN_TRACKER_FEATURE` environment variable.
-2. Exact workspace path in `~/.cursor/token-tracker/config.json` under `features`.
-3. `default_feature` in `~/.cursor/token-tracker/config.json`.
+2. Exact workspace path in `~/.token-tracker/config.json` under `features`.
+3. `default_feature` in `~/.token-tracker/config.json`.
 4. Current git branch (`git branch --show-current`), or the host's worktree/branch name when available.
 
 Set feature:
@@ -86,4 +86,15 @@ Set feature:
 ~/.codex/skills/token-tracker/scripts/statusline-token-usage.js
 ```
 
-Fields are controlled by `~/.cursor/token-tracker/config.json` under `statusline`. Cursor CLI can wire this via `cli-config.json` `statusLine`. Other hosts can still call the same script when they expose a status hook.
+Fields are controlled by `~/.token-tracker/config.json` under `statusline`.
+Cursor CLI can wire this via `cli-config.json` `statusLine`. Other hosts can still call the same script when they expose a status hook.
+
+Estimated cost uses `~/.token-tracker/prices.json` (USD per 1M input/output tokens, matched by model name substring). Feature cost in the report is epoch-aware: it prices token deltas between snapshots and resets when totals drop.
+
+Refresh rates with:
+
+```bash
+npx @mbrundige/token-tracker prices pull
+```
+
+By default, status line / report also schedule a background pull when `prices.json` is older than 1 hour (`config.prices.auto_pull`). Snapshot rows lock `cost_delta_usd` at save time so historical report totals do not drift when rates change.

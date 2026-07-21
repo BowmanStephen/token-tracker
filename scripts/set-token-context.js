@@ -4,13 +4,10 @@
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const { paths } = require("./paths.js");
 
 function configPath() {
-  if (process.env.TOKEN_TRACKER_CONFIG) {
-    const p = process.env.TOKEN_TRACKER_CONFIG;
-    return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
-  }
-  return path.join(os.homedir(), ".cursor", "token-tracker", "config.json");
+  return paths().configPath;
 }
 
 function loadConfig() {
