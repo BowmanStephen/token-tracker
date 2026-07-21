@@ -92,6 +92,8 @@ npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 
 Defaults when no target flags are set: `--cursor` and `--statusline`.
 
+Install also writes a `token-tracker` launcher to `~/.local/bin/token-tracker` (and a shared CLI under `~/.token-tracker/cli/`). If your shell cannot find `token-tracker`, add `~/.local/bin` to `PATH`, or keep using `npx @mbrundige/token-tracker …` / `node ~/.cursor/skills/token-tracker/scripts/….js`.
+
 ## Requirements
 
 - Node.js **22+**
@@ -378,7 +380,7 @@ git push origin "v${VERSION}"
 
 The [Publish npm](.github/workflows/publish-npm.yml) workflow then:
 
-- checks that the tag (`v0.7.0`) matches `package.json`
+- checks that the tag (`v0.7.1`) matches `package.json`
 - runs `node scripts/check.js`
 - runs `npm publish --access public --provenance`
 - creates a GitHub Release with generated notes

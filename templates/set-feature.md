@@ -13,13 +13,13 @@ Any text after `/set-feature` is the feature name (for example `/set-feature che
 Set:
 
 ```bash
-{{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "<name>"
+node {{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "<name>"
 ```
 
 Clear:
 
 ```bash
-{{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --clear-feature
+node {{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --clear-feature
 ```
 
 3. Show the JSON result to the user.

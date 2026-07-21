@@ -12,7 +12,7 @@ Works across Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent S
 When the user invokes `/token-tracker` or `$token-tracker` (with no other request), run the report and show the output:
 
 ```bash
-{{SKILL_BIN}}/report-token-usage.js
+node {{SKILL_BIN}}/report-token-usage.js
 ```
 
 Present the report as-is (feature breakdown + GitHub-style daily heat map). Then ask once:
@@ -33,13 +33,13 @@ When the user invokes `/set-feature` or `$set-feature` (or asks to set/label the
 2. Run:
 
 ```bash
-{{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "<name>"
+node {{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "<name>"
 ```
 
 Or to clear:
 
 ```bash
-{{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --clear-feature
+node {{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --clear-feature
 ```
 
 3. Show the JSON result. Mention that status-line `toks` resets for this scope when the feature changes.
@@ -69,7 +69,7 @@ Default to not saving if the user does not answer. Do not save secrets, raw prom
 2. Run:
 
 ```bash
-{{SKILL_BIN}}/save-token-usage.js --json '<snapshot-json>'
+node {{SKILL_BIN}}/save-token-usage.js --json '<snapshot-json>'
 ```
 
 3. Tell the user the snapshot was saved to `~/.token-tracker/history.jsonl`.
@@ -101,13 +101,15 @@ Feature names resolve in this order:
 Set feature:
 
 ```bash
-{{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "maintenance"
+node {{SKILL_BIN}}/set-token-context.js --workspace "$PWD" --feature "maintenance"
 ```
+
+Prefer `node …/scripts/….js` (or the installed `token-tracker` CLI on `PATH`) — do not run a bare `token-tracker` command unless `~/.local/bin` is on `PATH` after install.
 
 ## Status Line (Cursor CLI)
 
 ```bash
-{{SKILL_BIN}}/statusline-token-usage.js
+node {{SKILL_BIN}}/statusline-token-usage.js
 ```
 
 Fields are controlled by `~/.token-tracker/config.json` under `statusline`.

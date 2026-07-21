@@ -205,16 +205,66 @@ const installResult = require("child_process").spawnSync(
   { encoding: "utf8", env: { ...process.env, HOME: installHome } },
 );
 assert.strictEqual(installResult.status, 0, installResult.stderr || installResult.stdout);
+const installJson = JSON.parse(installResult.stdout.slice(installResult.stdout.indexOf("{")));
+assert.ok(installJson.cli_launcher, "install should report cli_launcher");
 assert.ok(fs.existsSync(path.join(installHome, ".cursor", "commands", "set-feature.md")));
 assert.ok(fs.existsSync(path.join(installHome, ".claude", "commands", "set-feature.md")));
 assert.ok(fs.existsSync(path.join(installHome, ".gemini", "commands", "set-feature.toml")));
 assert.ok(fs.existsSync(path.join(installHome, ".gemini", "commands", "token-tracker.toml")));
 const cursorCmd = fs.readFileSync(path.join(installHome, ".cursor", "commands", "set-feature.md"), "utf8");
 assert.ok(cursorCmd.includes("set-token-context.js"));
+assert.ok(cursorCmd.includes("node ~/.cursor/skills/token-tracker/scripts"));
 assert.ok(cursorCmd.includes("~/.cursor/skills/token-tracker/scripts"));
 const geminiSet = fs.readFileSync(path.join(installHome, ".gemini", "commands", "set-feature.toml"), "utf8");
 assert.ok(geminiSet.includes("{{args}}"));
 assert.ok(geminiSet.includes("set-token-context.js"));
+const skillMd = fs.readFileSync(
+  path.join(installHome, ".cursor", "skills", "token-tracker", "SKILL.md"),
+  "utf8",
+);
+assert.ok(skillMd.includes("node ~/.cursor/skills/token-tracker/scripts/report-token-usage.js"));
+
+// PATH launcher must make `token-tracker` resolvable (regression for command not found)
+const launcher = path.join(installHome, ".local", "bin", "token-tracker");
+assert.ok(fs.existsSync(launcher), "missing ~/.local/bin/token-tracker");
+assert.ok(fs.statSync(launcher).mode & 0o111, "launcher must be executable");
+assert.ok(fs.existsSync(path.join(installHome, ".token-tracker", "cli", "bin", "token-tracker.js")));
+const which = require("child_process").spawnSync("bash", ["-lc", "command -v token-tracker"], {
+  encoding: "utf8",
+  env: {
+    ...process.env,
+    HOME: installHome,
+    PATH: `${path.join(installHome, ".local", "bin")}${path.delimiter}${process.env.PATH || ""}`,
+  },
+});
+assert.strictEqual(which.status, 0, which.stderr || which.stdout);
+assert.ok(String(which.stdout).includes("token-tracker"));
+const help = require("child_process").spawnSync("token-tracker", ["--help"], {
+  encoding: "utf8",
+  env: {
+    ...process.env,
+    HOME: installHome,
+    PATH: `${path.join(installHome, ".local", "bin")}${path.delimiter}${process.env.PATH || ""}`,
+  },
+});
+assert.strictEqual(help.status, 0, help.stderr || help.stdout);
+assert.ok(String(help.stdout).includes("set-feature"), help.stdout);
+
+// Status line must be invoked via node (not a bare shebang path alone)
+const statusInstall = require("child_process").spawnSync(
+  process.execPath,
+  [path.join(__dirname, "..", "bin", "token-tracker.js"), "install", "--cursor"],
+  { encoding: "utf8", env: { ...process.env, HOME: installHome } },
+);
+assert.strictEqual(statusInstall.status, 0, statusInstall.stderr || statusInstall.stdout);
+const cliConfig = JSON.parse(
+  fs.readFileSync(path.join(installHome, ".cursor", "cli-config.json"), "utf8"),
+);
+assert.ok(cliConfig.statusLine && typeof cliConfig.statusLine.command === "string");
+assert.ok(
+  cliConfig.statusLine.command.startsWith("node "),
+  `statusLine should use node: ${cliConfig.statusLine.command}`,
+);
 
 const setFeature = require("child_process").spawnSync(
   process.execPath,
