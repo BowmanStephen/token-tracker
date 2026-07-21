@@ -2,7 +2,7 @@
 "use strict";
 
 /**
- * Fetch latest model rates and write ~/.cursor/token-tracker/prices.json
+ * Fetch latest model rates and write ~/.token-tracker/prices.json
  *
  * Sources:
  *   openrouter  — https://openrouter.ai/api/v1/models (default)
@@ -17,11 +17,9 @@ const https = require("https");
 const http = require("http");
 const { spawn } = require("child_process");
 const { pricesUpdatedAtMs } = require("./pricing.js");
+const { paths, expand } = require("./paths.js");
 
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
-const DEFAULT_PRICES_PATH = process.env.TOKEN_TRACKER_PRICES
-  ? expand(process.env.TOKEN_TRACKER_PRICES)
-  : path.join(DATA_DIR, "prices.json");
+const DEFAULT_PRICES_PATH = paths().pricesPath;
 const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
 
 const SOURCES = {
@@ -73,10 +71,6 @@ const FAMILY_ALIASES = [
   { alias: "composer", test: (id) => id.includes("composer") },
 ];
 
-function expand(p) {
-  return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
-}
-
 function usage() {
   console.log(`Usage:
   npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko] [--out PATH] [--dry-run]
@@ -84,7 +78,7 @@ function usage() {
 
 Defaults:
   --source openrouter
-  --out ~/.cursor/token-tracker/prices.json
+  --out ~/.token-tracker/prices.json
 `);
 }
 

@@ -12,18 +12,9 @@ const {
   featureOngoingCost,
 } = require("./pricing.js");
 const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
+const { paths } = require("./paths.js");
 
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
-
-function resolvePath(envKey, fallback) {
-  const raw = process.env[envKey] || fallback;
-  if (raw.startsWith("~/")) return path.join(os.homedir(), raw.slice(2));
-  return raw;
-}
-
-const HISTORY_PATH = resolvePath("TOKEN_TRACKER_HISTORY", path.join(DATA_DIR, "history.jsonl"));
-const CONFIG_PATH = resolvePath("TOKEN_TRACKER_CONFIG", path.join(DATA_DIR, "config.json"));
-const PRICES_PATH = resolvePath("TOKEN_TRACKER_PRICES", path.join(DATA_DIR, "prices.json"));
+const { historyPath: HISTORY_PATH, configPath: CONFIG_PATH, pricesPath: PRICES_PATH } = paths();
 
 function loadJsonFile(filePath) {
   if (!fs.existsSync(filePath)) return {};

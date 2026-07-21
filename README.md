@@ -15,7 +15,7 @@
   <img src="docs/logos/agents.png" alt="Agent Skills" height="44" />
 </p>
 
-No npm dependencies. Shared data stays on your machine under `~/.cursor/token-tracker/` so every host contributes to one history.
+No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.token-tracker/` — so Cursor, Claude, Gemini, Codex, and Continue all contribute to one history.
 
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown and heat map" width="720" />
@@ -38,7 +38,7 @@ Switching project or feature resets the status-line counter for that scope, so e
 ## Features
 
 - **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
-- **Shared history** across hosts (one JSONL ledger under `~/.cursor/token-tracker/`)
+- **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
 - **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
 - **Gemini custom command** — installs `~/.gemini/commands/token-tracker.toml` for `/token-tracker`
 - **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
@@ -117,7 +117,7 @@ npx @mbrundige/token-tracker set-context \
 **Feature**
 
 1. `TOKEN_TRACKER_FEATURE`
-2. Workspace path in `~/.cursor/token-tracker/config.json` under `features`
+2. Workspace path in `~/.token-tracker/config.json` under `features`
 3. `default_feature`
 4. Current git branch
 
@@ -147,7 +147,7 @@ In chat, invoke the skill:
 History file (shared by all hosts):
 
 ```text
-~/.cursor/token-tracker/history.jsonl
+~/.token-tracker/history.jsonl
 ```
 
 ## Save a snapshot
@@ -175,7 +175,7 @@ Cursor CLI can show a live line like:
 token-tracker | token-tracker/readme-demos | GPT-5.5 | ctx [###.......] 27% | toks 7.1k | $0.0534
 ```
 
-Configure visible fields in `~/.cursor/token-tracker/config.json`:
+Configure visible fields in `~/.token-tracker/config.json`:
 
 ```json
 {
@@ -199,7 +199,7 @@ Cost is **feature-scoped**, same as `toks`:
 1. Status line uses current feature prompt/completion totals × rates for the active model
 2. Report walks history chronologically, prices **positive token deltas** between snapshots, and starts a new epoch when totals drop (feature reset)
 
-Rates live in `~/.cursor/token-tracker/prices.json` (seeded on install from `templates/prices.json`):
+Rates live in `~/.token-tracker/prices.json` (seeded on install from `templates/prices.json`):
 
 ```json
 {
@@ -232,7 +232,7 @@ npx @mbrundige/token-tracker prices show
 | `llmcosthub` | `https://llmcosthub.com/api/v1/pricing.json` |
 | `benchgecko` | BenchGecko `pricing.json` on GitHub |
 
-Pull writes `~/.cursor/token-tracker/prices.json` (with a `.bak` backup), keeps your existing `default` rates, and preserves any model entry marked `"locked": true`.
+Pull writes `~/.token-tracker/prices.json` (with a `.bak` backup), keeps your existing `default` rates, and preserves any model entry marked `"locked": true`.
 
 #### Hourly auto-refresh
 
@@ -313,12 +313,15 @@ node scripts/check.js
 
 | Path | Purpose |
 | --- | --- |
-| `~/.cursor/token-tracker/config.json` | Project/feature map + status line options |
-| `~/.cursor/token-tracker/history.jsonl` | Append-only usage snapshots (all hosts) |
-| `~/.cursor/token-tracker/prices.json` | Model rate table for estimated cost (seeded on install) |
+| `~/.token-tracker/` | Agent-neutral shared data home (override with `TOKEN_TRACKER_HOME`) |
+| `~/.token-tracker/config.json` | Project/feature map + status line options |
+| `~/.token-tracker/history.jsonl` | Append-only usage snapshots (all hosts) |
+| `~/.token-tracker/prices.json` | Model rate table for estimated cost (seeded on install) |
 | `~/.gemini/commands/token-tracker.toml` | Gemini `/token-tracker` custom command (when `--gemini`) |
 
-Override paths with `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_TRACKER_PRICES`.
+On first run / install, if `~/.token-tracker/` is empty and legacy `~/.cursor/token-tracker/` has data, files are copied over (legacy folder is left in place).
+
+Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_TRACKER_PRICES`.
 
 ## Repo layout
 

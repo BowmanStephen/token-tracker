@@ -5,20 +5,14 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { loadPrices, computeCostDelta } = require("./pricing.js");
+const { paths, expand: expandHome } = require("./paths.js");
 
-const DEFAULT_HISTORY = path.join(os.homedir(), ".cursor", "token-tracker", "history.jsonl");
-const DEFAULT_PRICES = path.join(os.homedir(), ".cursor", "token-tracker", "prices.json");
+const { historyPath: DEFAULT_HISTORY, pricesPath: DEFAULT_PRICES } = paths();
 const INT_FIELDS = ["prompt_tokens", "completion_tokens", "total_tokens"];
 
 function fail(message) {
   console.error(`token-tracker: ${message}`);
   process.exit(2);
-}
-
-function expandHome(p) {
-  if (!p) return p;
-  if (p.startsWith("~/")) return path.join(os.homedir(), p.slice(2));
-  return p;
 }
 
 function parseArgs(argv) {
@@ -173,9 +167,7 @@ function lastScopeSnapshot(rows, project, feature) {
 
 function lockSnapshotCost(snapshot, historyPath) {
   if (snapshot.total_tokens == null && snapshot.prompt_tokens == null) return snapshot;
-  const pricesPath = process.env.TOKEN_TRACKER_PRICES
-    ? expandHome(process.env.TOKEN_TRACKER_PRICES)
-    : DEFAULT_PRICES;
+  const pricesPath = process.env.TOKEN_TRACKER_PRICES ? expandHome(process.env.TOKEN_TRACKER_PRICES) : DEFAULT_PRICES;
   const prices = loadPrices(pricesPath);
   const rows = loadHistoryRows(historyPath);
   const previous = lastScopeSnapshot(rows, snapshot.project, snapshot.feature);

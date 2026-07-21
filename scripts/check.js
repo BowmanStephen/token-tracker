@@ -3,6 +3,7 @@
 
 const assert = require("assert");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { cleanSnapshot } = require("./save-token-usage.js");
 const { TARGETS, selectedTargets, renderTemplate } = require("../bin/token-tracker.js");
@@ -132,6 +133,23 @@ fs.rmSync(freshPricesPath, { force: true });
 const refresh = priceRefreshOptions({ prices: { auto_pull: true, auto_pull_interval_hours: 1 } });
 assert.strictEqual(refresh.maxAgeMs, 3600000);
 assert.strictEqual(priceRefreshOptions({ prices: { auto_pull: false } }).autoPull, false);
+
+// Shared data home migration: legacy ~/.cursor/token-tracker -> ~/.token-tracker
+const home = fs.mkdtempSync(path.join(os.tmpdir(), "tt-home-"));
+const prevHome = process.env.HOME;
+process.env.HOME = home;
+delete require.cache[require.resolve("./paths.js")];
+const pathsFresh = require("./paths.js");
+fs.mkdirSync(path.join(home, ".cursor", "token-tracker"), { recursive: true });
+fs.writeFileSync(path.join(home, ".cursor", "token-tracker", "history.jsonl"), '{"ok":1}\n');
+const mig = pathsFresh.migrateLegacyDataDir(path.join(home, ".token-tracker"));
+assert.strictEqual(mig.migrated, true);
+assert.ok(fs.existsSync(path.join(home, ".token-tracker", "history.jsonl")));
+assert.ok(fs.existsSync(path.join(home, ".cursor", "token-tracker", "history.jsonl")), "legacy kept");
+assert.strictEqual(pathsFresh.resolveDataDir(), path.join(home, ".token-tracker"));
+process.env.HOME = prevHome;
+delete require.cache[require.resolve("./paths.js")];
+fs.rmSync(home, { recursive: true, force: true });
 
 assert.strictEqual(cleanKey("OpenAI: GPT-5.5"), "gpt-5.5");
 const pulled = parseOpenRouter({

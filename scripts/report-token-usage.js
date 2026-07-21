@@ -6,24 +6,12 @@ const os = require("os");
 const path = require("path");
 const { loadPrices, formatCost, epochFeatureCost } = require("./pricing.js");
 const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
+const { paths, expand } = require("./paths.js");
 
-const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
-const HISTORY_PATH = process.env.TOKEN_TRACKER_HISTORY
-  ? expand(process.env.TOKEN_TRACKER_HISTORY)
-  : path.join(DATA_DIR, "history.jsonl");
-const CONFIG_PATH = process.env.TOKEN_TRACKER_CONFIG
-  ? expand(process.env.TOKEN_TRACKER_CONFIG)
-  : path.join(DATA_DIR, "config.json");
-const PRICES_PATH = process.env.TOKEN_TRACKER_PRICES
-  ? expand(process.env.TOKEN_TRACKER_PRICES)
-  : path.join(DATA_DIR, "prices.json");
+const { historyPath: HISTORY_PATH, configPath: CONFIG_PATH, pricesPath: PRICES_PATH } = paths();
 
 const HEAT = ["·", "░", "▒", "▓", "█"];
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function expand(p) {
-  return p.startsWith("~/") ? path.join(os.homedir(), p.slice(2)) : p;
-}
 
 function compact(n) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -232,7 +220,7 @@ function renderFeatureTable(features) {
     );
   } else {
     lines.push(`Total tracked: ${compact(grand)} toks across ${features.length} feature(s)`);
-    lines.push("Cost: n/a (add ~/.cursor/token-tracker/prices.json or run: npx @mbrundige/token-tracker prices pull)");
+    lines.push("Cost: n/a (add ~/.token-tracker/prices.json or run: npx @mbrundige/token-tracker prices pull)");
   }
   return lines.join("\n");
 }
