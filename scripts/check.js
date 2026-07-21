@@ -12,6 +12,7 @@ const {
   formatCost,
   epochFeatureCost,
 } = require("./pricing.js");
+const { parseOpenRouter, buildPricesDocument, cleanKey } = require("./pull-prices.js");
 
 const snap = cleanSnapshot({
   summary: "check",
@@ -72,5 +73,43 @@ assert.ok(epoch.costUsd != null);
 // Claude Opus: 400in/100out at $5/$25 = 0.002+0.0025=0.0045
 // total ~0.0295
 assert.ok(Math.abs(epoch.costUsd - 0.0295) < 1e-9);
+
+assert.strictEqual(cleanKey("OpenAI: GPT-5.5"), "gpt-5.5");
+const pulled = parseOpenRouter({
+  data: [
+    {
+      id: "openai/gpt-5.5",
+      name: "OpenAI: GPT-5.5",
+      pricing: { prompt: "0.000005", completion: "0.00003" },
+    },
+    {
+      id: "anthropic/claude-opus-4.8",
+      name: "Anthropic: Claude Opus 4.8",
+      pricing: { prompt: "0.000005", completion: "0.000025" },
+    },
+    {
+      id: "mistral/skip-me",
+      name: "Mistral: Skip",
+      pricing: { prompt: "0.000001", completion: "0.000001" },
+    },
+  ],
+});
+assert.ok(pulled["gpt-5.5"]);
+assert.strictEqual(pulled["gpt-5.5"].input_per_million_usd, 5);
+assert.ok(pulled["claude opus"]);
+assert.strictEqual(pulled["claude opus"].output_per_million_usd, 25);
+assert.ok(!pulled["skip-me"]);
+
+const doc = buildPricesDocument({
+  source: "openrouter",
+  url: "https://example.test",
+  models: pulled,
+  previous: {
+    default: { input_per_million_usd: 1, output_per_million_usd: 2 },
+    models: { "my-local": { input_per_million_usd: 9, output_per_million_usd: 9, locked: true } },
+  },
+});
+assert.strictEqual(doc.default.input_per_million_usd, 1);
+assert.ok(doc.models["my-local"].locked);
 
 console.log("ok");

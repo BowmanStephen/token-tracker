@@ -70,6 +70,7 @@ const SCRIPT_FILES = [
   "statusline-token-usage.js",
   "report-token-usage.js",
   "pricing.js",
+  "pull-prices.js",
 ];
 
 function usage() {
@@ -79,6 +80,8 @@ function usage() {
   npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
   npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
   npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
+  npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
+  npx @mbrundige/token-tracker prices show
 
 Install targets:
   --all                 Cursor, Claude, Gemini, Codex, Agent Skills, Continue
@@ -274,6 +277,11 @@ function main() {
   if (cmd === "save") return delegate("save-token-usage.js", rest);
   if (cmd === "set-context") return delegate("set-token-context.js", rest);
   if (cmd === "statusline") return delegate("statusline-token-usage.js", rest);
+  if (cmd === "prices") {
+    const script = path.join(ROOT, "scripts", "pull-prices.js");
+    const result = spawnSync(process.execPath, [script, ...rest], { stdio: "inherit" });
+    process.exit(result.status == null ? 1 : result.status);
+  }
   console.error(`token-tracker: unknown command: ${cmd}`);
   usage();
   process.exit(2);

@@ -216,6 +216,24 @@ Rates live in `~/.cursor/token-tracker/prices.json` (seeded on install from `tem
 
 Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates — Cursor/Claude subscriptions may bill differently, so edit the file to match your reality.
 
+### Pull latest prices
+
+Refresh `prices.json` from a public feed (default: OpenRouter):
+
+```bash
+npx @mbrundige/token-tracker prices pull
+npx @mbrundige/token-tracker prices pull --source llmcosthub
+npx @mbrundige/token-tracker prices show
+```
+
+| Source | URL |
+| --- | --- |
+| `openrouter` (default) | `https://openrouter.ai/api/v1/models` |
+| `llmcosthub` | `https://llmcosthub.com/api/v1/pricing.json` |
+| `benchgecko` | BenchGecko `pricing.json` on GitHub |
+
+Pull writes `~/.cursor/token-tracker/prices.json` (with a `.bak` backup), keeps your existing `default` rates, and preserves any model entry marked `"locked": true`.
+
 Set `"show_cost": false` to hide cost on the status line. The report still prints a cost column whenever prices are available.
 
 Test it manually:
@@ -233,6 +251,8 @@ npx @mbrundige/token-tracker report
 npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
 npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
 npx @mbrundige/token-tracker statusline   # reads status JSON from stdin
+npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchgecko]
+npx @mbrundige/token-tracker prices show
 ```
 
 ## Manual install (from a clone)
