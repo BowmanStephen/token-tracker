@@ -380,7 +380,7 @@ git push origin "v${VERSION}"
 
 The [Publish npm](.github/workflows/publish-npm.yml) workflow then:
 
-- checks that the tag (`v0.7.1`) matches `package.json`
+- checks that the tag (`v0.8.0`) matches `package.json`
 - runs `node scripts/check.js`
 - runs `npm publish --access public --provenance`
 - creates a GitHub Release with generated notes
