@@ -185,6 +185,8 @@ npx @mbrundige/token-tracker save \
 
 You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots store summaries and counts — not prompts or transcripts.
 
+**Underscore aliases**: For convenience, token flags accept both kebab-case (`--prompt-tokens`) and underscore (`--prompt_tokens`) forms. The same applies to `--total-tokens`, `--completion-tokens`, and `--metadata-json`.
+
 ## Status line
 
 Cursor CLI can show a live line like:

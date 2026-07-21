@@ -100,6 +100,8 @@ function usage() {
   npx @mbrundige/token-tracker install [targets...] [--statusline|--no-statusline]
   npx @mbrundige/token-tracker report
   npx @mbrundige/token-tracker save --summary "..." [--project NAME] [--feature NAME]
+      [--model NAME] [--prompt-tokens N] [--completion-tokens N] [--total-tokens N]
+      [--json '...'] [--source TEXT] [--metadata-json '...']
   npx @mbrundige/token-tracker set-context --project NAME --feature NAME [--workspace PATH]
   npx @mbrundige/token-tracker set-feature NAME [--workspace PATH]
   npx @mbrundige/token-tracker set-feature --clear [--workspace PATH]
