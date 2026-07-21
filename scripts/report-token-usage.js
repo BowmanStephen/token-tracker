@@ -5,6 +5,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const { loadPrices, formatCost, epochFeatureCost } = require("./pricing.js");
+const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
 
 const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
 const HISTORY_PATH = process.env.TOKEN_TRACKER_HISTORY
@@ -93,6 +94,8 @@ function featureBreakdown(rows, prices) {
       completion_tokens: row.completion_tokens,
       total_tokens: row.total_tokens,
       model: row.model || null,
+      cost_delta_usd: row.cost_delta_usd,
+      estimated_cost_usd: row.estimated_cost_usd,
     });
   }
 
@@ -101,7 +104,7 @@ function featureBreakdown(rows, prices) {
     const [project, feature] = key.split("\t");
     items.sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
     const total = epochTotal(items.map((i) => i.total));
-    const costInfo = epochFeatureCost(items, prices);
+    const costInfo = epochFeatureCost(items, prices, { preferLocked: true });
     const last = items[items.length - 1];
     out.push({
       project,
@@ -109,6 +112,8 @@ function featureBreakdown(rows, prices) {
       total,
       costUsd: costInfo.costUsd,
       costApproximate: costInfo.approximate,
+      costLockedDeltas: costInfo.lockedDeltas,
+      costLiveDeltas: costInfo.liveDeltas,
       snapshots: items.length,
       last_seen: last ? last.ts : null,
     });
@@ -215,13 +220,19 @@ function renderFeatureTable(features) {
   }
   lines.push("");
   if (anyCost) {
-    const approxNote = anyApprox ? " (~ includes rows without prompt/completion split)" : "";
+    const locked = features.reduce((s, f) => s + (f.costLockedDeltas || 0), 0);
+    const live = features.reduce((s, f) => s + (f.costLiveDeltas || 0), 0);
+    const bits = [];
+    if (locked) bits.push(`${locked} locked`);
+    if (live) bits.push(`${live} live-priced`);
+    if (anyApprox) bits.push("some rows lack prompt/completion split");
+    const note = bits.length ? ` (${bits.join(", ")})` : "";
     lines.push(
-      `Total tracked: ${compact(grand)} toks / ${formatCost(grandCost)} est across ${features.length} feature(s)${approxNote}`,
+      `Total tracked: ${compact(grand)} toks / ${formatCost(grandCost)} est across ${features.length} feature(s)${note}`,
     );
   } else {
     lines.push(`Total tracked: ${compact(grand)} toks across ${features.length} feature(s)`);
-    lines.push("Cost: n/a (add ~/.cursor/token-tracker/prices.json or reinstall to seed defaults)");
+    lines.push("Cost: n/a (add ~/.cursor/token-tracker/prices.json or run: npx @mbrundige/token-tracker prices pull)");
   }
   return lines.join("\n");
 }
@@ -236,6 +247,14 @@ function currentScope(config) {
 function main() {
   const rows = loadRows();
   const config = loadConfig();
+  const refresh = priceRefreshOptions(config);
+  if (refresh.autoPull) {
+    schedulePricePullIfStale({
+      pricesPath: PRICES_PATH,
+      source: refresh.source,
+      maxAgeMs: refresh.maxAgeMs,
+    });
+  }
   const prices = loadPrices(PRICES_PATH);
   const scope = currentScope(config);
   const features = featureBreakdown(rows, prices);
@@ -245,6 +264,7 @@ function main() {
   console.log("====================");
   console.log(`History: ${HISTORY_PATH}`);
   console.log(`Prices:  ${PRICES_PATH}${fs.existsSync(PRICES_PATH) ? "" : " (missing)"}`);
+  if (prices.updated_at) console.log(`Price as of: ${prices.updated_at}`);
   console.log(
     `Current scope: ${scope.project}${scope.feature ? `/${scope.feature}` : ""}`,
   );

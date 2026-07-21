@@ -26,6 +26,11 @@ const DEFAULT_CONFIG = {
     show_tokens: true,
     show_cost: true,
   },
+  prices: {
+    auto_pull: true,
+    auto_pull_interval_hours: 1,
+    source: "openrouter",
+  },
 };
 
 /** @type {Record<string, { flag: string, skillDir: string, label: string, statusline?: boolean, geminiCommand?: boolean }>} */

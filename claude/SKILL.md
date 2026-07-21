@@ -96,3 +96,5 @@ Refresh rates with:
 ```bash
 npx @mbrundige/token-tracker prices pull
 ```
+
+By default, status line / report also schedule a background pull when `prices.json` is older than 1 hour (`config.prices.auto_pull`). Snapshot rows lock `cost_delta_usd` at save time so historical report totals do not drift when rates change.

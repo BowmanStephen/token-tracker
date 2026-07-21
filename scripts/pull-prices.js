@@ -15,11 +15,14 @@ const os = require("os");
 const path = require("path");
 const https = require("https");
 const http = require("http");
+const { spawn } = require("child_process");
+const { pricesUpdatedAtMs } = require("./pricing.js");
 
 const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
 const DEFAULT_PRICES_PATH = process.env.TOKEN_TRACKER_PRICES
   ? expand(process.env.TOKEN_TRACKER_PRICES)
   : path.join(DATA_DIR, "prices.json");
+const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
 
 const SOURCES = {
   openrouter: {
@@ -321,6 +324,123 @@ function buildPricesDocument({ source, url, models, previous }) {
   };
 }
 
+async function runPull({ source = "openrouter", outPath = DEFAULT_PRICES_PATH, dryRun = false } = {}) {
+  const src = SOURCES[source];
+  if (!src) throw new Error(`unknown source "${source}". Use: ${Object.keys(SOURCES).join(", ")}`);
+
+  const remote = await fetchJson(src.url);
+  const models = src.parse(remote);
+  const previous = loadLocal(outPath);
+  const doc = buildPricesDocument({ source, url: src.url, models, previous });
+  const count = Object.keys(doc.models).length;
+  if (!count) throw new Error("pull produced 0 model rates; refusing to write");
+
+  if (dryRun) {
+    return {
+      dry_run: true,
+      source,
+      source_url: src.url,
+      out: outPath,
+      model_count: count,
+      sample: Object.fromEntries(Object.entries(doc.models).slice(0, 8)),
+    };
+  }
+
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  if (fs.existsSync(outPath)) {
+    fs.copyFileSync(outPath, `${outPath}.bak`);
+  }
+  fs.writeFileSync(outPath, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
+  return {
+    updated: outPath,
+    source,
+    source_url: src.url,
+    model_count: count,
+    backup: fs.existsSync(`${outPath}.bak`) ? `${outPath}.bak` : undefined,
+    note: 'Mark any local override with "locked": true to keep it on the next pull.',
+  };
+}
+
+/**
+ * If prices are older than maxAgeMs, spawn a detached `prices pull`.
+ * Never blocks the caller (safe for Cursor statusLine's ~1s budget).
+ */
+function schedulePricePullIfStale({
+  pricesPath = DEFAULT_PRICES_PATH,
+  source = "openrouter",
+  maxAgeMs = DEFAULT_MAX_AGE_MS,
+  pullScript = path.join(__dirname, "pull-prices.js"),
+} = {}) {
+  const ageGate = Number(maxAgeMs);
+  if (!Number.isFinite(ageGate) || ageGate <= 0) {
+    return { scheduled: false, reason: "disabled" };
+  }
+
+  const updatedMs = pricesUpdatedAtMs(pricesPath);
+  const ageMs = updatedMs ? Date.now() - updatedMs : Infinity;
+  if (ageMs < ageGate && fs.existsSync(pricesPath)) {
+    return { scheduled: false, reason: "fresh", ageMs, updatedMs };
+  }
+
+  const lockPath = `${pricesPath}.pulling`;
+  try {
+    if (fs.existsSync(lockPath)) {
+      const lockAge = Date.now() - fs.statSync(lockPath).mtimeMs;
+      if (lockAge < 5 * 60 * 1000) {
+        return { scheduled: false, reason: "in_flight", lockAge };
+      }
+    }
+    fs.mkdirSync(path.dirname(pricesPath), { recursive: true });
+    fs.writeFileSync(lockPath, `${Date.now()}\n`, "utf8");
+  } catch {
+    return { scheduled: false, reason: "lock_failed" };
+  }
+
+  try {
+    const child = spawn(
+      process.execPath,
+      [pullScript, "pull", "--source", source, "--out", pricesPath],
+      {
+        detached: true,
+        stdio: "ignore",
+        env: process.env,
+      },
+    );
+    child.unref();
+    // Best-effort lock cleanup shortly after start; pull also overwrites prices.
+    setTimeout(() => {
+      try {
+        fs.rmSync(lockPath, { force: true });
+      } catch {
+        // ignore
+      }
+    }, 30_000).unref?.();
+    return { scheduled: true, reason: "stale", ageMs, updatedMs, pid: child.pid };
+  } catch (err) {
+    try {
+      fs.rmSync(lockPath, { force: true });
+    } catch {
+      // ignore
+    }
+    return { scheduled: false, reason: "spawn_failed", error: String(err.message || err) };
+  }
+}
+
+function priceRefreshOptions(config) {
+  const prices = config && typeof config.prices === "object" ? config.prices : {};
+  const hours = prices.auto_pull_interval_hours;
+  let maxAgeMs = DEFAULT_MAX_AGE_MS;
+  if (hours === false || prices.auto_pull === false) maxAgeMs = 0;
+  else if (hours != null && Number.isFinite(Number(hours))) {
+    maxAgeMs = Math.max(0, Number(hours) * 60 * 60 * 1000);
+  }
+  return {
+    autoPull: maxAgeMs > 0,
+    maxAgeMs,
+    source: prices.source || "openrouter",
+  };
+}
+
 async function pullPrices(argv) {
   let source = "openrouter";
   let outPath = DEFAULT_PRICES_PATH;
@@ -340,61 +460,14 @@ async function pullPrices(argv) {
     }
   }
 
-  const src = SOURCES[source];
-  if (!src) {
-    console.error(`token-tracker: unknown source "${source}". Use: ${Object.keys(SOURCES).join(", ")}`);
-    process.exit(2);
+  const result = await runPull({ source, outPath, dryRun });
+  console.log(JSON.stringify(result, null, 2));
+  // Clear any pull lock left by schedulePricePullIfStale.
+  try {
+    fs.rmSync(`${outPath}.pulling`, { force: true });
+  } catch {
+    // ignore
   }
-
-  const remote = await fetchJson(src.url);
-  const models = src.parse(remote);
-  const previous = loadLocal(outPath);
-  const doc = buildPricesDocument({ source, url: src.url, models, previous });
-  const count = Object.keys(doc.models).length;
-
-  if (!count) {
-    console.error("token-tracker: pull produced 0 model rates; refusing to write");
-    process.exit(1);
-  }
-
-  if (dryRun) {
-    console.log(
-      JSON.stringify(
-        {
-          dry_run: true,
-          source,
-          source_url: src.url,
-          out: outPath,
-          model_count: count,
-          sample: Object.fromEntries(Object.entries(doc.models).slice(0, 8)),
-        },
-        null,
-        2,
-      ),
-    );
-    return;
-  }
-
-  fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  // Backup existing file once per pull.
-  if (fs.existsSync(outPath)) {
-    fs.copyFileSync(outPath, `${outPath}.bak`);
-  }
-  fs.writeFileSync(outPath, `${JSON.stringify(doc, null, 2)}\n`, "utf8");
-  console.log(
-    JSON.stringify(
-      {
-        updated: outPath,
-        source,
-        source_url: src.url,
-        model_count: count,
-        backup: fs.existsSync(`${outPath}.bak`) ? `${outPath}.bak` : undefined,
-        note: 'Mark any local override with "locked": true to keep it on the next pull.',
-      },
-      null,
-      2,
-    ),
-  );
 }
 
 function showPrices(argv) {
@@ -458,12 +531,16 @@ async function main(argv = process.argv.slice(2)) {
 
 module.exports = {
   SOURCES,
+  DEFAULT_MAX_AGE_MS,
   parseOpenRouter,
   parseLlmCostHub,
   parseBenchGecko,
   buildPricesDocument,
   cleanKey,
   idKey,
+  runPull,
+  schedulePricePullIfStale,
+  priceRefreshOptions,
   main,
 };
 

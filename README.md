@@ -234,6 +234,31 @@ npx @mbrundige/token-tracker prices show
 
 Pull writes `~/.cursor/token-tracker/prices.json` (with a `.bak` backup), keeps your existing `default` rates, and preserves any model entry marked `"locked": true`.
 
+#### Hourly auto-refresh
+
+New installs enable automatic pulls. While the Cursor status line (or report) runs, if `prices.json` is older than 1 hour, Token Tracker **spawns a background** `prices pull` so the status line stays within its timeout budget. Ongoing cost uses the freshest rates already on disk; the next run picks up the updated file.
+
+```json
+{
+  "prices": {
+    "auto_pull": true,
+    "auto_pull_interval_hours": 1,
+    "source": "openrouter"
+  }
+}
+```
+
+Set `"auto_pull": false` (or `auto_pull_interval_hours: 0`) to disable.
+
+#### Locked-in epoch costs
+
+When a snapshot is saved (status line or `save`), Token Tracker records:
+
+- `cost_delta_usd` — cost of that snapshot's token growth at **then-current** rates
+- `estimated_cost_usd` — cumulative locked cost for the feature epoch
+
+The report **prefers these locked deltas**, so historical feature cost does not drift when prices refresh. Unpriced older rows still fall back to live re-pricing. The status line shows locked history for the feature plus a live tip for tokens beyond the last snapshot (priced at current rates).
+
 Set `"show_cost": false` to hide cost on the status line. The report still prints a cost column whenever prices are available.
 
 Test it manually:

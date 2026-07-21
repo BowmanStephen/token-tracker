@@ -11,8 +11,15 @@ const {
   estimateCostUsdForModel,
   formatCost,
   epochFeatureCost,
+  computeCostDelta,
 } = require("./pricing.js");
-const { parseOpenRouter, buildPricesDocument, cleanKey } = require("./pull-prices.js");
+const {
+  parseOpenRouter,
+  buildPricesDocument,
+  cleanKey,
+  schedulePricePullIfStale,
+  priceRefreshOptions,
+} = require("./pull-prices.js");
 
 const snap = cleanSnapshot({
   summary: "check",
@@ -73,6 +80,58 @@ assert.ok(epoch.costUsd != null);
 // Claude Opus: 400in/100out at $5/$25 = 0.002+0.0025=0.0045
 // total ~0.0295
 assert.ok(Math.abs(epoch.costUsd - 0.0295) < 1e-9);
+
+// Locked deltas win even if live prices would differ.
+const lockedEpoch = epochFeatureCost(
+  [
+    {
+      ts: "1",
+      total: 1000,
+      prompt_tokens: 700,
+      completion_tokens: 300,
+      model: "GPT-5.5",
+      cost_delta_usd: 0.01,
+    },
+    {
+      ts: "2",
+      total: 2000,
+      prompt_tokens: 1400,
+      completion_tokens: 600,
+      model: "GPT-5.5",
+      cost_delta_usd: 0.02,
+    },
+  ],
+  prices,
+  { preferLocked: true },
+);
+assert.ok(Math.abs(lockedEpoch.costUsd - 0.03) < 1e-9);
+assert.strictEqual(lockedEpoch.lockedDeltas, 2);
+assert.strictEqual(lockedEpoch.liveDeltas, 0);
+
+const delta = computeCostDelta(
+  { project: "p", feature: "f", prompt_tokens: 700, completion_tokens: 300, total_tokens: 1000, estimated_cost_usd: 0.01 },
+  { project: "p", feature: "f", model: "GPT-5.5", prompt_tokens: 1400, completion_tokens: 600, total_tokens: 2000 },
+  prices,
+);
+assert.ok(Math.abs(delta.costDeltaUsd - 0.0125) < 1e-9);
+assert.ok(Math.abs(delta.estimatedCostUsd - 0.0225) < 1e-9);
+
+const freshPricesPath = path.join("/tmp", `tt-prices-fresh-${process.pid}.json`);
+fs.writeFileSync(
+  freshPricesPath,
+  `${JSON.stringify({ updated_at: new Date().toISOString(), default: prices.default, models: {} }, null, 2)}\n`,
+);
+const sched = schedulePricePullIfStale({
+  pricesPath: freshPricesPath,
+  maxAgeMs: 60 * 60 * 1000,
+});
+assert.strictEqual(sched.scheduled, false);
+assert.strictEqual(sched.reason, "fresh");
+fs.rmSync(freshPricesPath, { force: true });
+
+const refresh = priceRefreshOptions({ prices: { auto_pull: true, auto_pull_interval_hours: 1 } });
+assert.strictEqual(refresh.maxAgeMs, 3600000);
+assert.strictEqual(priceRefreshOptions({ prices: { auto_pull: false } }).autoPull, false);
 
 assert.strictEqual(cleanKey("OpenAI: GPT-5.5"), "gpt-5.5");
 const pulled = parseOpenRouter({

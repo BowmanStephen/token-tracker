@@ -7,9 +7,11 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 const {
   loadPrices,
-  estimateCostUsdForModel,
   formatCost,
+  computeCostDelta,
+  featureOngoingCost,
 } = require("./pricing.js");
+const { schedulePricePullIfStale, priceRefreshOptions } = require("./pull-prices.js");
 
 const DATA_DIR = path.join(os.homedir(), ".cursor", "token-tracker");
 
@@ -171,7 +173,19 @@ function appendHistory(row) {
   fs.appendFileSync(HISTORY_PATH, `${JSON.stringify(row)}\n`, "utf8");
 }
 
-function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, outputTokens, usedPct, costUsd) {
+function lastScopeSnapshot(rows, project, feature) {
+  let last = null;
+  const scopeFeature = feature || null;
+  for (const row of rows) {
+    if (String(row.project || "") !== String(project || "")) continue;
+    const rowFeature = row.feature == null || row.feature === "" ? null : String(row.feature);
+    if (rowFeature !== scopeFeature) continue;
+    last = row;
+  }
+  return last;
+}
+
+function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, outputTokens, usedPct, prices) {
   const totalTokens = inputTokens + outputTokens;
   if (totalTokens <= 0) return false;
   const sessionKey = String(payload.session_id || payload.transcript_path || "unknown-session");
@@ -179,6 +193,18 @@ function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, o
   for (const row of rows) {
     if (row.metadata && row.metadata.auto_key === autoKey) return false;
   }
+
+  const current = {
+    project,
+    feature,
+    model,
+    prompt_tokens: inputTokens,
+    completion_tokens: outputTokens,
+    total_tokens: totalTokens,
+  };
+  const previous = lastScopeSnapshot(rows, project, feature);
+  const priced = computeCostDelta(previous, current, prices);
+
   const snapshot = {
     timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
     project,
@@ -193,12 +219,17 @@ function autoSaveSnapshot(payload, rows, project, feature, model, inputTokens, o
       session_id: payload.session_id || null,
       transcript_path: payload.transcript_path || null,
       used_percentage: usedPct,
+      cost_locked: priced.costDeltaUsd != null,
     },
   };
   if (feature) snapshot.feature = feature;
-  if (costUsd != null && Number.isFinite(costUsd)) {
-    snapshot.estimated_cost_usd = Number(costUsd.toFixed(6));
+  if (priced.costDeltaUsd != null && Number.isFinite(priced.costDeltaUsd)) {
+    snapshot.cost_delta_usd = Number(priced.costDeltaUsd.toFixed(6));
   }
+  if (priced.estimatedCostUsd != null && Number.isFinite(priced.estimatedCostUsd)) {
+    snapshot.estimated_cost_usd = Number(priced.estimatedCostUsd.toFixed(6));
+  }
+  if (priced.rates) snapshot.cost_rates = priced.rates;
   appendHistory(snapshot);
   return true;
 }
@@ -238,6 +269,15 @@ function main() {
   const options = statuslineOptions(config);
   if (!options.enabled) return;
 
+  const refresh = priceRefreshOptions(config);
+  if (refresh.autoPull) {
+    schedulePricePullIfStale({
+      pricesPath: PRICES_PATH,
+      source: refresh.source,
+      maxAgeMs: refresh.maxAgeMs,
+    });
+  }
+
   const currentDir = workspaceDirFromPayload(payload);
   const project = projectFromPayload(config, currentDir);
   const feature = featureFromPayload(payload, config, currentDir);
@@ -253,13 +293,6 @@ function main() {
   );
 
   const prices = loadPrices(PRICES_PATH);
-  const costUsd = estimateCostUsdForModel(
-    prices,
-    model,
-    featureTokens.inputTokens,
-    featureTokens.outputTokens,
-  );
-
   const rows = iterHistory();
   autoSaveSnapshot(
     payload,
@@ -270,7 +303,22 @@ function main() {
     featureTokens.inputTokens,
     featureTokens.outputTokens,
     usedPct,
-    costUsd,
+    prices,
+  );
+
+  // Re-read after possible append so ongoing cost includes the just-locked delta tip correctly.
+  const rowsAfter = iterHistory();
+  const ongoing = featureOngoingCost(
+    rowsAfter,
+    {
+      project,
+      feature,
+      inputTokens: featureTokens.inputTokens,
+      outputTokens: featureTokens.outputTokens,
+      totalTokens: featureTokens.totalTokens,
+      model,
+    },
+    prices,
   );
 
   const ctx = contextBar(usedPct);
@@ -283,7 +331,7 @@ function main() {
   if (options.show_context) parts.push(ctx);
   if (options.show_tokens) parts.push(toks);
   if (options.show_cost) {
-    parts.push(formatCost(costUsd, { prefix: "$", unpriced: "$?" }));
+    parts.push(formatCost(ongoing.costUsd, { prefix: "$", unpriced: "$?" }));
   }
   console.log(parts.join(" | "));
 }
