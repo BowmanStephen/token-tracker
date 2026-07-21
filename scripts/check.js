@@ -345,6 +345,66 @@ assert.ok(pulled["claude opus"]);
 assert.strictEqual(pulled["claude opus"].output_per_million_usd, 25);
 assert.ok(!pulled["skip-me"]);
 
+// "gemini" alias must prefer a genuinely newer version over a dated snapshot
+// of an older version. A dated snapshot like "-preview-05-06" used to score
+// higher than a real "3.1" bump because versionScore() took the max across
+// ALL digit groups in the id, letting the trailing date digits win.
+const geminiPulled = parseOpenRouter({
+  data: [
+    {
+      id: "google/gemini-2.5-pro-preview-05-06",
+      name: "Google: Gemini 2.5 Pro Preview 05-06",
+      pricing: { prompt: "0.0000125", completion: "0.00005" },
+    },
+    {
+      id: "google/gemini-3.1-pro-preview",
+      name: "Google: Gemini 3.1 Pro Preview",
+      pricing: { prompt: "0.000002", completion: "0.000008" },
+    },
+  ],
+});
+assert.strictEqual(geminiPulled["gemini"].input_per_million_usd, 2);
+
+// Two dated snapshots of the SAME version: the higher trailing digit group
+// still breaks the tie (auto-tracks the newer snapshot), it just can no
+// longer outrank a different major/minor version.
+const sameVersionPulled = parseOpenRouter({
+  data: [
+    {
+      id: "google/gemini-3.1-pro-preview-03-01",
+      name: "Google: Gemini 3.1 Pro Preview 03-01",
+      pricing: { prompt: "0.000002", completion: "0.000008" },
+    },
+    {
+      id: "google/gemini-3.1-pro-preview-05-06",
+      name: "Google: Gemini 3.1 Pro Preview 05-06",
+      pricing: { prompt: "0.000003", completion: "0.000009" },
+    },
+  ],
+});
+assert.strictEqual(sameVersionPulled["gemini"].input_per_million_usd, 3);
+
+// Same bug class, worse shape: real Anthropic ids on OpenRouter pack a dated
+// snapshot's date into ONE ungrouped digit run ("-20250514", no dashes inside
+// it), which used to score even higher than gemini's split "05-06" groups.
+// "claude sonnet" (test: /^anthropic\/claude-sonnet-/) must still prefer the
+// real "4.5" version bump over the dated "4" snapshot.
+const sonnetPulled = parseOpenRouter({
+  data: [
+    {
+      id: "anthropic/claude-sonnet-4-20250514",
+      name: "Anthropic: Claude Sonnet 4 (2025-05-14)",
+      pricing: { prompt: "0.000003", completion: "0.000015" },
+    },
+    {
+      id: "anthropic/claude-sonnet-4.5",
+      name: "Anthropic: Claude Sonnet 4.5",
+      pricing: { prompt: "0.000004", completion: "0.00002" },
+    },
+  ],
+});
+assert.strictEqual(sonnetPulled["claude sonnet"].input_per_million_usd, 4);
+
 const doc = buildPricesDocument({
   source: "openrouter",
   url: "https://example.test",

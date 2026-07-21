@@ -143,15 +143,29 @@ function providerOf(id) {
 }
 
 function versionScore(id) {
-  // Prefer higher dotted versions; "4.8" > "4.6" > "4".
-  const m = String(id).match(/(\d+(?:\.\d+)*)/g);
-  if (!m) return 0;
-  return m.reduce((score, part) => {
+  // Returns { primary, secondary }, not a single number.
+  // primary = score of the FIRST dotted-digit group in the id (the real
+  // version, e.g. "2.5" in "gemini-2.5-pro-preview-05-06"). It always
+  // decides the winner between two ids, so a dated-snapshot suffix on an
+  // older version (the "05-06" above) can never outrank a genuinely newer
+  // version (e.g. "gemini-3.1"). secondary = max of the remaining groups,
+  // used only to break ties between snapshots of the *same* primary version.
+  const groups = String(id).match(/(\d+(?:\.\d+)*)/g);
+  if (!groups) return { primary: 0, secondary: 0 };
+  const scoreOf = (part) => {
     const bits = part.split(".").map((n) => Number(n) || 0);
     let s = 0;
     for (let i = 0; i < bits.length; i += 1) s += bits[i] * 1000 ** (3 - i);
-    return Math.max(score, s);
-  }, 0);
+    return s;
+  };
+  const primary = scoreOf(groups[0]);
+  const secondary = groups.slice(1).reduce((max, part) => Math.max(max, scoreOf(part)), 0);
+  return { primary, secondary };
+}
+
+/** Compare two versionScore() results; >0 means `a` wins. */
+function compareVersionScore(a, b) {
+  return a.primary - b.primary || a.secondary - b.secondary;
 }
 
 function parseOpenRouter(payload) {
@@ -180,7 +194,7 @@ function parseOpenRouter(payload) {
       if (!key || key.length < 2) continue;
       // Prefer higher version when colliding on the same key.
       const prev = models[key];
-      if (!prev || versionScore(id) >= versionScore(prev._id || "")) {
+      if (!prev || compareVersionScore(versionScore(id), versionScore(prev._id || "")) >= 0) {
         models[key] = { ...rates, _id: id };
       }
     }
@@ -246,7 +260,7 @@ function parseBenchGecko(payload) {
 
 function applyFamilyAliases(models, catalog) {
   for (const { alias, test } of FAMILY_ALIASES) {
-    const matches = catalog.filter((c) => test(c.id)).sort((a, b) => b.score - a.score);
+    const matches = catalog.filter((c) => test(c.id)).sort((a, b) => compareVersionScore(b.score, a.score));
     if (!matches.length) continue;
     models[alias] = { ...matches[0].rates, _id: matches[0].id };
   }
