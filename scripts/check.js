@@ -5,7 +5,7 @@ const assert = require("assert");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { cleanSnapshot } = require("./save-token-usage.js");
+const { cleanSnapshot, parseArgs } = require("./save-token-usage.js");
 const { TARGETS, selectedTargets, renderTemplate } = require("../bin/token-tracker.js");
 const { createAnsi, wantsColor } = require("./ansi.js");
 const {
@@ -32,6 +32,34 @@ const snap = cleanSnapshot({
 });
 assert.strictEqual(snap.total_tokens, 15);
 assert.strictEqual(snap.source, "manual");
+
+// Test underscore aliases
+const underscoreArgs = parseArgs(["--prompt_tokens", "10", "--completion_tokens", "5", "--summary", "x"]);
+assert.strictEqual(underscoreArgs.prompt_tokens, 10);
+assert.strictEqual(underscoreArgs.completion_tokens, 5);
+assert.strictEqual(underscoreArgs.summary, "x");
+
+// Test kebab forms still work
+const kebabArgs = parseArgs(["--prompt-tokens", "20", "--completion-tokens", "10", "--summary", "y"]);
+assert.strictEqual(kebabArgs.prompt_tokens, 20);
+assert.strictEqual(kebabArgs.completion_tokens, 10);
+assert.strictEqual(kebabArgs.summary, "y");
+
+// Test --help flag
+const helpArgs = parseArgs(["--help"]);
+assert.strictEqual(helpArgs.help, true);
+
+const hArgs = parseArgs(["-h"]);
+assert.strictEqual(hArgs.help, true);
+
+const helpWordArgs = parseArgs(["help"]);
+assert.strictEqual(helpWordArgs.help, true);
+
+// Test mixed underscore aliases
+const mixedArgs = parseArgs(["--total_tokens", "100", "--metadata_json", '{"foo":"bar"}', "--summary", "z"]);
+assert.strictEqual(mixedArgs.total_tokens, 100);
+assert.strictEqual(mixedArgs.metadata_json, '{"foo":"bar"}');
+assert.strictEqual(mixedArgs.summary, "z");
 
 assert.deepStrictEqual(selectedTargets([]), ["cursor"]);
 assert.deepStrictEqual(selectedTargets(["--claude", "--gemini"]), ["claude", "gemini"]);

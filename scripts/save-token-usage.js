@@ -15,6 +15,31 @@ function fail(message) {
   process.exit(2);
 }
 
+function usage() {
+  console.log(`Usage: token-tracker save --summary "..." [options]
+
+Required:
+  --summary TEXT             Description of the work (required)
+
+Optional:
+  --project NAME             Project name (defaults to current directory name)
+  --feature NAME             Feature name
+  --model NAME               Model name
+  --prompt-tokens N          Input token count
+  --completion-tokens N      Output token count
+  --total-tokens N           Total token count (computed if prompt+completion given)
+  --json '...'               Full snapshot JSON object (overrides other flags)
+  --source TEXT              Source label (defaults to "manual")
+  --metadata-json '...'      Additional metadata as JSON object
+
+Underscore aliases (accepted for convenience):
+  --prompt_tokens            Same as --prompt-tokens
+  --completion_tokens        Same as --completion-tokens
+  --total_tokens             Same as --total-tokens
+  --metadata_json            Same as --metadata-json
+`);
+}
+
 function parseArgs(argv) {
   const args = {
     json: null,
@@ -28,6 +53,7 @@ function parseArgs(argv) {
     completion_tokens: null,
     total_tokens: null,
     metadata_json: null,
+    help: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
@@ -35,6 +61,10 @@ function parseArgs(argv) {
       i += 1;
       return argv[i];
     };
+    if (a === "--help" || a === "-h" || a === "help") {
+      args.help = true;
+      continue;
+    }
     if (a === "--json") args.json = next();
     else if (a === "--history") args.history = next();
     else if (a === "--project") args.project = next();
@@ -42,10 +72,10 @@ function parseArgs(argv) {
     else if (a === "--summary") args.summary = next();
     else if (a === "--model") args.model = next();
     else if (a === "--source") args.source = next();
-    else if (a === "--prompt-tokens") args.prompt_tokens = Number(next());
-    else if (a === "--completion-tokens") args.completion_tokens = Number(next());
-    else if (a === "--total-tokens") args.total_tokens = Number(next());
-    else if (a === "--metadata-json") args.metadata_json = next();
+    else if (a === "--prompt-tokens" || a === "--prompt_tokens") args.prompt_tokens = Number(next());
+    else if (a === "--completion-tokens" || a === "--completion_tokens") args.completion_tokens = Number(next());
+    else if (a === "--total-tokens" || a === "--total_tokens") args.total_tokens = Number(next());
+    else if (a === "--metadata-json" || a === "--metadata_json") args.metadata_json = next();
     else fail(`unknown argument: ${a}`);
   }
   return args;
@@ -189,6 +219,10 @@ function appendSnapshot(snapshot, historyPath) {
 
 function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    usage();
+    process.exit(0);
+  }
   const payload = loadPayload(args);
   let snapshot = cleanSnapshot(payload);
   const historyPath = expandHome(args.history) || DEFAULT_HISTORY;
@@ -199,4 +233,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { cleanSnapshot, loadPayload, parseArgs, lockSnapshotCost };
+module.exports = { cleanSnapshot, loadPayload, parseArgs, lockSnapshotCost, usage };
