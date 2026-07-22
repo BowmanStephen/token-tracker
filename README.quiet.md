@@ -21,6 +21,8 @@
 
 No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the same history.
 
+Local only. Your machine.
+
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
 </p>
@@ -31,7 +33,7 @@ No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes
 
 ## Why
 
-AI sessions burn tokens across threads, models, and side quests. token-tracker answers:
+AI sessions burn tokens across threads, models, and unlabeled side work. token-tracker answers:
 
 - **Where did the tokens go?** Breakdown by `project/feature`, not only a session total
 - **What does this week look like?** Daily heat map (same shape as a GitHub contribution graph)
@@ -195,7 +197,7 @@ npx @mbrundige/token-tracker save \
   <img src="docs/screenshots/save.png" alt="token-tracker save snapshot output" width="720" />
 </p>
 
-You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots store summaries and counts — not prompts or transcripts.
+You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots store summaries and counts, not prompts or transcripts.
 
 **Underscore aliases**: For convenience, token flags accept both kebab-case (`--prompt-tokens`) and underscore (`--prompt_tokens`) forms. The same applies to `--total-tokens`, `--completion-tokens`, and `--metadata-json`.
 
@@ -246,7 +248,7 @@ Rates live in `~/.token-tracker/prices.json` (seeded on install from `templates/
 }
 ```
 
-Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates — Cursor/Claude subscriptions may bill differently, so edit the file to match your reality.
+Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates. Cursor/Claude subscriptions may bill differently, so edit the file to match your reality.
 
 ### Pull latest prices
 
@@ -292,8 +294,8 @@ Set `"auto_pull": false` (or `auto_pull_interval_hours: 0`) to disable. Manual `
 
 When a snapshot is saved (status line or `save`), Token Tracker records:
 
-- `cost_delta_usd` — cost of that snapshot's token growth at **then-current** rates
-- `estimated_cost_usd` — cumulative locked cost for the feature epoch
+- `cost_delta_usd` - cost of that snapshot's token growth at **then-current** rates
+- `estimated_cost_usd` - cumulative locked cost for the feature epoch
 
 The report **prefers these locked deltas**, so historical feature cost does not drift when prices refresh. Unpriced older rows still fall back to live re-pricing. The status line shows locked history for the feature plus a live tip for tokens beyond the last snapshot (priced at current rates).
 
@@ -414,9 +416,11 @@ npx @mbrundige/token-tracker install --all
 
 ## Contributors
 
-- [Max Brundige](https://github.com/mbrundige)
-- [Stephen Bowman](https://github.com/BowmanStephen)
+- [Max Brundige](https://github.com/mbrundige): built the machine
+- [Stephen Bowman](https://github.com/BowmanStephen): florin kit / unpaid mark service
 
 ## License
 
 MIT
+
+`flr · local`
