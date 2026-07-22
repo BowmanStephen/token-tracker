@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logos/token-tracker.png" alt="florin — local token ledger" width="900" />
+  <img src="docs/logos/token-tracker.png" alt="florin, local token ledger" width="900" />
 </p>
 
 <p align="center">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts — snapshot AI spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
+  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts. Snapshot spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
   <img src="docs/logos/agents.png" alt="Agent Skills" height="36" />
 </p>
 
-No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.token-tracker/` — so Cursor, Claude, Gemini, Codex, and Continue all contribute to one history.
+No npm dependencies. Shared data lives in `~/.token-tracker/`, so Cursor, Claude, Gemini, Codex, and Continue all write one history.
 
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
@@ -31,15 +31,15 @@ No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.t
 
 ## Why
 
-AI sessions burn tokens across many threads, models, and side quests. Token Tracker answers:
+AI sessions burn tokens across threads, models, and side quests. token-tracker answers:
 
-- **Where did the tokens go?** Breakdown by `project/feature`, not just a session total
+- **Where did the tokens go?** Breakdown by `project/feature`, not only a session total
 - **What does this week look like?** Daily heat map (same shape as a GitHub contribution graph)
 - **What am I burning right now?** Optional Cursor CLI `statusLine` with feature-scoped `toks` and estimated `$` cost
 
 Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward.
 
-Florence’s gold florin (*fiorino d’oro*) was Europe’s trusted **settlement** coin — a stable unit of account. **token-tracker** treats AI tokens the same way: one local ledger under `~/.token-tracker/`, an ASCII **F** for *fiorino*, and a blue chip as the assay mark that the count lives on *your* machine.
+Florence’s gold florin (*fiorino d’oro*) was a unit of account. **token-tracker** borrows the name: tokens are the unit, `~/.token-tracker/` is the book, and the **F** is for *fiorino*. We don’t move your gold. We count what you already spent.
 
 <p align="center">
   <img src="docs/logos/florin-coin.png" alt="Engraved florin F-coin" width="200" />
@@ -51,13 +51,13 @@ Florence’s gold florin (*fiorino d’oro*) was Europe’s trusted **settlement
 
 - **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
 - **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
-- **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
-- **`/set-feature` slash command** — label the current workspace feature from chat (Cursor, Claude, Gemini)
-- **Gemini custom commands** — `/token-tracker` and `/set-feature` under `~/.gemini/commands/`
-- **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
-- **Estimated cost per feature** — from `prices.json` rates × prompt/completion deltas (epoch-aware)
-- **Epoch-aware totals** — feature resets do not double-count growing snapshots
-- **Zero runtime deps** — plain Node.js 22+ scripts
+- **`/token-tracker` skill**: run the report (and optionally save a snapshot) from chat
+- **`/set-feature` slash command**: label the current workspace feature from chat (Cursor, Claude, Gemini)
+- **Gemini custom commands**: `/token-tracker` and `/set-feature` under `~/.gemini/commands/`
+- **Feature-scoped status line**: project, feature, model, context bar, token count, estimated cost
+- **Estimated cost per feature**: from `prices.json` rates × prompt/completion deltas (epoch-aware)
+- **Epoch-aware totals**: feature resets do not double-count growing snapshots
+- **Zero runtime deps**: plain Node.js 22+ scripts
 
 ## Quick install
 
