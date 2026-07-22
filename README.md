@@ -19,7 +19,7 @@
   <img src="docs/logos/agents.png" alt="Agent Skills" height="36" />
 </p>
 
-No npm dependencies. Shared data lives in `~/.token-tracker/`, so Cursor, Claude, Gemini, Codex, and Continue all write one history.
+No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the same history.
 
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
