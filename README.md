@@ -600,8 +600,8 @@ Thank you so much for coming out to the README. Give it up for the heat map. Giv
 
 ## Contributors
 
-- [Max Brundige](https://github.com/mbrundige) — built the machine
-- [Stephen Bowman](https://github.com/BowmanStephen) — unpaid florin service
+- [Max Brundige](https://github.com/mbrundige): built the machine
+- [Stephen Bowman](https://github.com/BowmanStephen): unpaid florin service
 
 ## License
 
