@@ -4,29 +4,11 @@
 
 <p align="center">
   <em>token-tracker</em>
-  <br />
-  <span>Local AI spend · one <em>libro</em> · unit <code>flr</code></span>
 </p>
-
-## Quick install
-
-```bash
-npx @mbrundige/token-tracker install --all
-```
-
-Or pick hosts:
-
-```bash
-npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
-```
-
-No npm dependencies. Shared data lives in `~/.token-tracker/` — every host feeds one history.
 
 <p align="center">
-  <img src="docs/screenshots/install.png" alt="token-tracker install output" width="720" />
+  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts — snapshot AI spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
 </p>
-
-### Supported hosts
 
 <p align="center">
   <img src="docs/logos/cursor.png" alt="Cursor" height="36" />
@@ -37,32 +19,15 @@ No npm dependencies. Shared data lives in `~/.token-tracker/` — every host fee
   <img src="docs/logos/agents.png" alt="Agent Skills" height="36" />
 </p>
 
-| | Flag | Host | Skill path | Extra |
-| --- | --- | --- | --- | --- |
-| <img src="docs/logos/cursor.png" alt="Cursor" height="28" /> | `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine`; installs `/set-feature` |
-| <img src="docs/logos/claude.png" alt="Claude Code" height="28" /> | `--claude` | Claude Code | `~/.claude/skills/token-tracker` | Installs `/set-feature` |
-| <img src="docs/logos/gemini.png" alt="Gemini CLI" height="28" /> | `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` and `/set-feature` commands |
-| <img src="docs/logos/codex.png" alt="Codex CLI" height="28" /> | `--codex` | Codex CLI | `~/.codex/skills/token-tracker` | Invoke with `$token-tracker` / skills UI |
-| <img src="docs/logos/agents.png" alt="Agent Skills" height="28" /> | `--agents` | Agent Skills standard | `~/.agents/skills/token-tracker` | Shared path used by Gemini and other tools |
-| <img src="docs/logos/continue.png" alt="Continue" height="28" /> | `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
-| <img src="docs/logos/icon.png" alt="All hosts" height="28" /> | `--all` | All of the above | | Includes Cursor `statusLine` by default |
+No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.token-tracker/` — so Cursor, Claude, Gemini, Codex, and Continue all contribute to one history.
 
-**After install**
+<p align="center">
+  <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
+</p>
 
-- Cursor: restart Cursor CLI if you enabled the status line
-- Gemini: run `/skills reload` and `/commands reload`
-- Codex / Continue / others: restart or reload skills if the skill does not appear
-
-### Install options
-
-| Flag | Effect |
-| --- | --- |
-| `--statusline` | Force Cursor CLI `statusLine` wiring |
-| `--no-statusline` | Skip `statusLine` changes |
-
-Defaults when no target flags are set: `--cursor` and `--statusline`.
-
-Install also writes a `token-tracker` launcher to `~/.local/bin/token-tracker` (and a shared CLI under `~/.token-tracker/cli/`). If your shell cannot find `token-tracker`, add `~/.local/bin` to `PATH`, or keep using `npx @mbrundige/token-tracker …` / `node ~/.cursor/skills/token-tracker/scripts/….js`.
+<p align="center">
+  <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
+</p>
 
 ## Why
 
@@ -94,13 +59,52 @@ Florence’s gold florin (*fiorino d’oro*) was Europe’s trusted **settlement
 - **Epoch-aware totals** — feature resets do not double-count growing snapshots
 - **Zero runtime deps** — plain Node.js 22+ scripts
 
-<p align="center">
-  <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
-</p>
+## Quick install
+
+Install everywhere you use agent skills:
+
+```bash
+npx @mbrundige/token-tracker install --all
+```
+
+Or pick hosts:
+
+```bash
+npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
+```
 
 <p align="center">
-  <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
+  <img src="docs/screenshots/install.png" alt="token-tracker install output" width="720" />
 </p>
+
+### Supported hosts
+
+| | Flag | Host | Skill path | Extra |
+| --- | --- | --- | --- | --- |
+| <img src="docs/logos/cursor.png" alt="Cursor" height="28" /> | `--cursor` | Cursor | `~/.cursor/skills/token-tracker` | Optional CLI `statusLine`; installs `/set-feature` |
+| <img src="docs/logos/claude.png" alt="Claude Code" height="28" /> | `--claude` | Claude Code | `~/.claude/skills/token-tracker` | Installs `/set-feature` |
+| <img src="docs/logos/gemini.png" alt="Gemini CLI" height="28" /> | `--gemini` | Gemini CLI | `~/.gemini/skills/token-tracker` | Also installs `/token-tracker` and `/set-feature` commands |
+| <img src="docs/logos/codex.png" alt="Codex CLI" height="28" /> | `--codex` | Codex CLI | `~/.codex/skills/token-tracker` | Invoke with `$token-tracker` / skills UI |
+| <img src="docs/logos/agents.png" alt="Agent Skills" height="28" /> | `--agents` | Agent Skills standard | `~/.agents/skills/token-tracker` | Shared path used by Gemini and other tools |
+| <img src="docs/logos/continue.png" alt="Continue" height="28" /> | `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
+| <img src="docs/logos/icon.png" alt="All hosts" height="28" /> | `--all` | All of the above | | Includes Cursor `statusLine` by default |
+
+**After install**
+
+- Cursor: restart Cursor CLI if you enabled the status line
+- Gemini: run `/skills reload` and `/commands reload`
+- Codex / Continue / others: restart or reload skills if the skill does not appear
+
+### Install options
+
+| Flag | Effect |
+| --- | --- |
+| `--statusline` | Force Cursor CLI `statusLine` wiring |
+| `--no-statusline` | Skip `statusLine` changes |
+
+Defaults when no target flags are set: `--cursor` and `--statusline`.
+
+Install also writes a `token-tracker` launcher to `~/.local/bin/token-tracker` (and a shared CLI under `~/.token-tracker/cli/`). If your shell cannot find `token-tracker`, add `~/.local/bin` to `PATH`, or keep using `npx @mbrundige/token-tracker …` / `node ~/.cursor/skills/token-tracker/scripts/….js`.
 
 ## Requirements
 
