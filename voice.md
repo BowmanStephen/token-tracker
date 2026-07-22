@@ -15,7 +15,7 @@ These are not costume. They are the voice’s spine.
 | Source | Borrow | Never |
 | --- | --- | --- |
 | **Norm Macdonald** | Deadpan understatement. True thing, said flat. Landing quieter than setup. Irish-American anti-comedy kinship (Conner’s own frame). | Telegraphed punchlines. “Get it?” Warmth that turns into sales. |
-| **Conner O’Malley / *Stand Up Solutions*** | See deep dive below. Love the brand-object. Commit to the premise. Do it with love. Midwest product sincerity (RAV4, not Elon). | Become Richard Eagleton. “Powered by 5G.” Cash-infusion keynote. Harvesting phones. “Certified experts.” |
+| **Conner O’Malley** (*Stand Up Solutions* + 5G cigarettes) | Sincere brand-object love (polo, RAV4, unpaid devotion). Commit past ridicule. Kit-first. Do it with love. | Become Richard / 5G messiah. Keynote volume. “Strongest signal ever.” Harvest theater. |
 | **High-star CLIs** (ripgrep, fzf, bat, uv) | Short, concrete, install early, proof before persuasion. | Badge spam as personality. Feature poetry. |
 
 **Brand value in one line:** Love the mark like a RAV4. Count what happened. Don’t sell a precipice.
@@ -74,13 +74,27 @@ Do not write like this, even as parody, in the README:
 
 token-tracker is the **opposite product** of KENN: not harvested comedy, not investor theater, not phone-slurp. The O’Malley value we keep is **sincere love of a branded object + total commitment to the premise**, delivered with Norm-flat prose — not Richard’s volume.
 
+### Side text — “500 cigarettes for 5G” (brand as new God)
+
+Earlier Conner bit: a man smokes ~500 cigarettes **in loving service of 5G** / T-Mobile / Verizon. Unpaid. Heartfelt thank-yous to corporate names. Prophecy voice (“Barbie is God… then man created a new God and that is called 5G”). Ex-coworkers laugh at the bit; he does it anyway. Benefits recited like ads: computers faster, chat rooms better, emojis you never heard of, “Yvonne’s World” as a planet.
+
+| Steal | Invert for Florin |
+| --- | --- |
+| **Unpaid devotion to a mark** — love without sponsorship disclaimer theater | We love the F-coin / mural / local path; we don’t beg angels or carriers |
+| **Heartfelt, not ironic** — “100% heartfelt thank you” energy toward the object | Thank the *ledger* and the *hosts* by naming them exactly; no telecom prayer |
+| **Commit past ridicule** — coworkers laughed; he still smoked for 5G | Ship the florin kit even when it looks “too much” for a CLI README — then stay quiet on the page |
+| Brand as salvation / “strongest signal ever invented” | **Anti:** florin is a unit of account joke, not a messiah. No “5G will end the virus.” Local count only. |
+
+**Bridge to *Stand Up Solutions*:** Same religion, different church. 5G cigarettes = manic brand worship. RAV4 digression = gentle brand worship. KENN keynote = brand worship as investor demo. Florin takes the **gentle + kit-first** lane; rejects the **messiah / signal / harvest** lane.
+
 ### Conner craft maxims (for writers)
 
 1. **Start with the shirt.** Mark / kit / mural can exist before the essay. (CustomInk.)
-2. **Do it with love.** Don’t sneer at florin, at Max’s heat map, at the user. Love the clerk energy.
-3. **Midwest product, not Valley god.** RAV4 USB ports > Elon. Local ledger > precipice.
+2. **Do it with love.** Don’t sneer at florin, at Max’s heat map, at the user. Love the clerk energy. (Also: unpaid devotion — love the mark without a sponsor read.)
+3. **Midwest product, not Valley god / telecom god.** RAV4 USB ports > Elon > “5G is God.” Local ledger > precipice > strongest signal ever invented.
 4. **Be stupid on purpose.** Anti-clever. Norm kinship. Don’t intellectualize the joke in the README.
 5. **Commit, then understate.** O’Malley escalation + Norm landing. Florin paragraph believes itself; last line is quieter than the setup (“We don’t move your gold. We count what you already spent.”).
+6. **Devotion ≠ volume.** 500-cigarettes energy is commitment; README volume stays Norm-flat. Love hard in the kit; speak soft on GitHub.
 
 ---
 
@@ -205,6 +219,8 @@ Prose models: Norm Macdonald; Conner O’Malley’s **brand-object love** and **
 
 > Powered by florin for 100% accurate token comedy.
 
+> 5G is God / strongest signal ever invented / loving service of the cloud.
+
 > By the time you finish this README you’ll be a certified ledger expert.
 
 > Unlock limitless intelligence potential at your fingertips.
@@ -215,15 +231,15 @@ Prose models: Norm Macdonald; Conner O’Malley’s **brand-object love** and **
 
 **Preferred:** ledger, history, snapshot, feature, host, estimated cost, zero deps, local, `~/.token-tracker/`, mark, coin, mural
 
-**Banned:** precipice, cash infusion, certified expert, social cohesion, powered by 5G, trusted settlement, assay mark, pivotal, seamless, unlock, empower, journey, tapestry, cutting-edge, enterprise-grade, on-chain, reinvent, “folks,” “game-changer,” “let that sink in,” “yes! wow!”
+**Banned:** precipice, cash infusion, certified expert, social cohesion, powered by 5G, strongest signal, “new God,” trusted settlement, assay mark, pivotal, seamless, unlock, empower, journey, tapestry, cutting-edge, enterprise-grade, on-chain, reinvent, “folks,” “game-changer,” “let that sink in,” “yes! wow!”
 
-**Person:** second person (“you”) for instructions; no corporate “we deliver”; no keynote “we’re so excited”
+**Person:** second person (“you”) for instructions; no corporate “we deliver”; no keynote “we’re so excited”; no unpaid-carrier prayer voice in the README
 
 **Contractions:** yes in lore/prose; keep command blocks literal
 
-**Emoji:** none in README headings or feature bullets
+**Emoji:** none in README headings or feature bullets (Conner’s “emojis you never heard of” is satire of 5G ads — we don’t ship that promise)
 
-**Comedy mechanic:** understatement > punchline. Brand love shows as **specific detail**, not volume. If you must cut a joke or a fact, cut the joke.
+**Comedy mechanic:** understatement > punchline. Brand love shows as **specific detail** and **kit devotion**, not volume or sacrifice theater. If you must cut a joke or a fact, cut the joke.
 
 ---
 
