@@ -1,32 +1,14 @@
 <p align="center">
-  <img src="docs/logos/token-tracker.png" alt="florin — the shirt, the mark, the mural" width="900" />
+  <img src="docs/logos/token-tracker.png" alt="florin, local token ledger" width="900" />
 </p>
 
 <p align="center">
-  <em>token-tracker</em><br />
-  <strong>Florin Keynote Address &amp; Local Ledger Product Demo</strong><br />
-  <sub>no angels · no 5G · no dirty box · just the book</sub>
+  <em>token-tracker</em>
 </p>
 
----
-
-Hi. Wow. Yes. Thank you so much for opening this README.
-
-I’m not getting paid by Florence. I’m not getting paid by npm. I’m doing this in **loving service of the florin** — the little **F** in the giant’s hand up there — because I think we’re lucky to even have a mark this good. Somebody laughed when I said we should put a medieval settlement coin on a Node CLI. They said you will never ship that. What gets them wrong. I shipped the shirt first. Then the mural. Then the path.
-
-This is a **100% heartfelt** thank you to Max Brundige for building the machine, and to every host that writes the same history like a family that shares one checkbook.
-
-We got so much to talk about. We got so much to get to.
-
----
-
-## What it is (before I digress into the RAV4 of it all)
-
-**token-tracker** is local token usage tracking for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts.
-
-Snapshot spend by project and feature. Keep a GitHub-style heat map. Optionally show a live Cursor CLI status line with `toks` and estimated `$`.
-
-No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the **same** history. That’s USB connectivity galore, spiritually. That’s five people or thirty infants of agent hosts charging off one port. I’m not getting a dime from Toyota. I just love this vehicle.
+<p align="center">
+  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts. Snapshot spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
+</p>
 
 <p align="center">
   <img src="docs/logos/cursor.png" alt="Cursor" height="36" />
@@ -37,6 +19,8 @@ No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes
   <img src="docs/logos/agents.png" alt="Agent Skills" height="36" />
 </p>
 
+No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the same history.
+
 <p align="center">
   <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
 </p>
@@ -45,50 +29,25 @@ No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes
   <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
 </p>
 
-Look at that report. Look at that status line. Everyone experiencing… not “social cohesion.” Just numbers. On your machine. Yes!
+## Why
 
----
-
-## Why (the part where I ask if you like to laugh, but about receipts)
-
-AI sessions burn tokens across threads, models, and side quests. You close the laptop and the money already left. The future is uncertain. All we have can be lost.
-
-But it doesn’t have to be *mysterious*.
-
-token-tracker answers:
+AI sessions burn tokens across threads, models, and side quests. token-tracker answers:
 
 - **Where did the tokens go?** Breakdown by `project/feature`, not only a session total
 - **What does this week look like?** Daily heat map (same shape as a GitHub contribution graph)
 - **What am I burning right now?** Optional Cursor CLI `statusLine` with feature-scoped `toks` and estimated `$` cost
 
-Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward. That’s not a bug. That’s fatherhood. You take the scope seriously.
+Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward.
 
-### Why florin (hometown brand history — Des Plaines energy, Italy edition)
-
-Florence minted the gold florin (*fiorino d’oro*). It was a **unit of account**. Merchants settled in it. They kept books. They did not need a Kinetic Emotional Neural Network powered by 5G for 100% accurate comedy.
-
-**token-tracker** borrows the name:
-
-- tokens are the unit
-- `~/.token-tracker/` is the book
-- the **F** is for *fiorino*
-- the blue chip is just the chip — assay if you want, USB glow if you’re honest
-
-We don’t move your gold. We don’t pull your texts. We don’t harvest the room. We count what you already spent.
-
-I love this coin. I love this mural. I love this ASCII disc. I’m not getting paid by the mint. Loving service.
+Florence’s gold florin (*fiorino d’oro*) was a unit of account. **token-tracker** borrows the name: tokens are the unit, `~/.token-tracker/` is the book, and the **F** is for *fiorino*. We don’t move your gold. We count what you already spent.
 
 <p align="center">
-  <img src="docs/logos/florin-coin.png" alt="Engraved florin F-coin — the polo shirt of the soul" width="200" />
+  <img src="docs/logos/florin-coin.png" alt="Engraved florin F-coin" width="200" />
   &nbsp;&nbsp;
-  <img src="docs/logos/florin-ascii.png" alt="ASCII florin disc — CustomInk before the product was real" width="200" />
+  <img src="docs/logos/florin-ascii.png" alt="ASCII florin disc" width="200" />
 </p>
 
-If you walk away tonight and only one word comes up when you close your eyes and think of this repo — if only one concept — that word is **ledger**. Technically I am a veteran of reading `history.jsonl`.
-
----
-
-## Features (the nuts and bolts — we are at a precipice of… installing)
+## Features
 
 - **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
 - **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
@@ -100,11 +59,7 @@ If you walk away tonight and only one word comes up when you close your eyes and
 - **Epoch-aware totals**: feature resets do not double-count growing snapshots
 - **Zero runtime deps**: plain Node.js 22+ scripts
 
-Zero runtime deps. Say it with me. Zero. Runtime. Deps. That’s MSRP honesty. That’s 22 city / 29 highway of dependency graph. Under a different package manager it might look different. Let’s not get political.
-
----
-
-## Quick install (cash infusion not required — although dessert is nice)
+## Quick install
 
 Install everywhere you use agent skills:
 
@@ -112,7 +67,7 @@ Install everywhere you use agent skills:
 npx @mbrundige/token-tracker install --all
 ```
 
-Or pick hosts (angel wings optional; we don’t need them; we’re fine; it’s like candy after a meal):
+Or pick hosts:
 
 ```bash
 npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
@@ -134,7 +89,7 @@ npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 | <img src="docs/logos/continue.png" alt="Continue" height="28" /> | `--continue` | Continue CLI | `~/.continue/skills/token-tracker` | |
 | <img src="docs/logos/icon.png" alt="All hosts" height="28" /> | `--all` | All of the above | | Includes Cursor `statusLine` by default |
 
-**After install** (read the room, pull yourself back):
+**After install**
 
 - Cursor: restart Cursor CLI if you enabled the status line
 - Gemini: run `/skills reload` and `/commands reload`
@@ -151,21 +106,13 @@ Defaults when no target flags are set: `--cursor` and `--statusline`.
 
 Install also writes a `token-tracker` launcher to `~/.local/bin/token-tracker` (and a shared CLI under `~/.token-tracker/cli/`). If your shell cannot find `token-tracker`, add `~/.local/bin` to `PATH`, or keep using `npx @mbrundige/token-tracker …` / `node ~/.cursor/skills/token-tracker/scripts/….js`.
 
-I love `~/.local/bin`. I love a PATH that works. Grind set mentality.
-
----
-
 ## Requirements
 
 - Node.js **22+**
 - At least one supported host with personal/user skills enabled
 - Optional: `git` (falls back to the current branch as the feature name)
 
-That’s it. No 5G. No dirty box. No certified AI experts by the time you leave. Just Node and a host. You’re gonna be able to see your tokens better. You’re gonna be able to open chat rooms… I mean agent chats… with receipts. You’re gonna be able to send… okay I’m stopping. Florin is not God. Florin is a unit. Man created a ledger. The ledger is quiet.
-
----
-
-## Label a project and feature (invest in the person — Lori would ask)
+## Label a project and feature
 
 ```bash
 npx @mbrundige/token-tracker set-context \
@@ -193,7 +140,7 @@ In chat:
   <img src="docs/screenshots/set-context.png" alt="token-tracker set-context output" width="720" />
 </p>
 
-`tokens_reset: true` means the status-line counter will start at `0` for the new scope. New picnic. New fruit snacks. New epoch. Don’t become The Punisher about it unless you want to.
+`tokens_reset: true` means the status-line counter will start at `0` for the new scope.
 
 ### Resolution order
 
@@ -211,9 +158,7 @@ In chat:
 3. `default_project`
 4. Workspace folder name
 
----
-
-## Report (put your hands together for the heat map)
+## Report
 
 ```bash
 npx @mbrundige/token-tracker report
@@ -229,15 +174,11 @@ In chat, invoke the skill:
 | Gemini CLI | `/token-tracker` and `/set-feature` custom commands (or skill activation) |
 | Codex CLI | `$token-tracker` or skills UI |
 
-History file (shared by all hosts — one book, many cambiators):
+History file (shared by all hosts):
 
 ```text
 ~/.token-tracker/history.jsonl
 ```
-
-That path is the RAV4. Starting “MSRP”: free. Total in-person seating: every agent host you install. USB connectivity: galore. Estimated resale value: your sanity.
-
----
 
 ## Save a snapshot
 
@@ -254,21 +195,17 @@ npx @mbrundige/token-tracker save \
   <img src="docs/screenshots/save.png" alt="token-tracker save snapshot output" width="720" />
 </p>
 
-You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots store summaries and counts — not prompts or transcripts. We omit the episodes where your private life would be funny. Context stays yours.
+You can also pass a full JSON object with `--json '...'` or on stdin. Snapshots store summaries and counts — not prompts or transcripts.
 
-**Underscore aliases**: For convenience, token flags accept both kebab-case (`--prompt-tokens`) and underscore (`--prompt_tokens`) forms. The same applies to `--total-tokens`, `--completion-tokens`, and `--metadata-json`. Peanut butter and jelly. Spaghetti and meatballs. Predictive text for flags.
+**Underscore aliases**: For convenience, token flags accept both kebab-case (`--prompt-tokens`) and underscore (`--prompt_tokens`) forms. The same applies to `--total-tokens`, `--completion-tokens`, and `--metadata-json`.
 
----
-
-## Status line (live, local, not mind-reading)
+## Status line
 
 Cursor CLI can show a live line like:
 
 ```text
 token-tracker | token-tracker/readme-demos | GPT-5.5 | ctx [###.......] 27% | toks 7.1k | $0.0534
 ```
-
-Optional wink: `flr · local` = florins, on this machine only. Not 5G. Not harvested. Local.
 
 Configure visible fields in `~/.token-tracker/config.json`:
 
@@ -309,7 +246,7 @@ Rates live in `~/.token-tracker/prices.json` (seeded on install from `templates/
 }
 ```
 
-Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates — Cursor/Claude subscriptions may bill differently, so edit the file to match your reality. The memes will lie to you about prices. Edit the file.
+Model keys are case-insensitive **substrings** of the model display name; the longest match wins. These are API list-price estimates — Cursor/Claude subscriptions may bill differently, so edit the file to match your reality.
 
 ### Pull latest prices
 
@@ -369,9 +306,7 @@ printf '%s' '{"session_id":"demo","cwd":"'"$PWD"'","workspace":{"current_dir":"'
   | npx @mbrundige/token-tracker statusline
 ```
 
----
-
-## CLI reference (the whole buffet)
+## CLI reference
 
 ```text
 npx @mbrundige/token-tracker install [--all] [--cursor] [--claude] [--gemini] [--codex] [--agents] [--continue] [--statusline|--no-statusline]
@@ -385,8 +320,6 @@ npx @mbrundige/token-tracker prices pull [--source openrouter|llmcosthub|benchge
 npx @mbrundige/token-tracker prices show
 ```
 
----
-
 ## Manual install (from a clone)
 
 ```bash
@@ -395,8 +328,6 @@ node bin/token-tracker.js install --all
 npm pack
 npx ./mbrundige-token-tracker-*.tgz install --gemini --codex
 ```
-
----
 
 ## Verify
 
@@ -418,11 +349,7 @@ token-tracker | <project>/<feature> | GPT-5.5 | ctx [..........] 4% | toks 0
 node scripts/check.js
 ```
 
-Be like a rock. Run the check.
-
----
-
-## Data layout (garage full of paths)
+## Data layout
 
 | Path | Purpose |
 | --- | --- |
@@ -439,8 +366,6 @@ On first run / install, if `~/.token-tracker/` is empty and legacy `~/.cursor/to
 
 Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER_HISTORY`, and `TOKEN_TRACKER_PRICES`.
 
----
-
 ## Repo layout
 
 | Path | Role |
@@ -451,11 +376,7 @@ Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER
 | `.github/workflows/` | CI checks + npm publish on `v*` tags |
 | `cursor/`, `claude/`, `gemini/`, `codex/`, `agents/`, `continue/` | Checked-in `SKILL.md` copies per host |
 | `docs/screenshots/` | README terminal demos |
-| `docs/logos/` | Florin brand marks + host badges — **the shirt** |
-| `voice.md` | Brand voice (Norm flat · Conner love · high-star CLI structure) |
-| `README.quiet.md` | The quiet twin, if you need Norm without the keynote |
-
----
+| `docs/logos/` | Florin brand marks + host badges |
 
 ## Publish (maintainers)
 
@@ -491,33 +412,11 @@ Then users can run:
 npx @mbrundige/token-tracker install --all
 ```
 
----
-
-## Classic-rock guided closing meditation (optional)
-
-Breathe in. Breathe out.
-
-Picture a quiet folder: `~/.token-tracker/`.  
-A garage with one book, not seven RAV4s.  
-A status line that tells the truth in under a second.  
-A mural where the coin is the logo and nobody needs a cash infusion.
-
-You must never stop counting what you spent.  
-No matter how badly the side quests beg you to look away.  
-In the end it’s worth it to live… epic? Nah.  
-In the end it’s worth it to live **local**.
-
-`flr · local`
-
----
-
 ## Contributors
 
-- [Max Brundige](https://github.com/mbrundige) — built the machine
-- [Stephen Bowman](https://github.com/BowmanStephen) — loving service of the florin
+- [Max Brundige](https://github.com/mbrundige)
+- [Stephen Bowman](https://github.com/BowmanStephen)
 
 ## License
 
 MIT
-
-Thank you so much for coming out to the README. Good night.
