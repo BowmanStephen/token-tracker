@@ -1,55 +1,14 @@
 <p align="center">
-  <img src="docs/logos/token-tracker.png" alt="token-tracker" width="520" />
+  <img src="docs/logos/token-tracker.png" alt="florin — local token ledger" width="900" />
 </p>
 
 <p align="center">
-  <strong>Local token usage tracking</strong> for Cursor, Claude Code, Gemini CLI, Codex, Continue, and other Agent Skills hosts — snapshot AI spend by project and feature, keep a GitHub-style heat map, and optionally show a live Cursor CLI status line.
+  <em>token-tracker</em>
+  <br />
+  <span>Local AI spend · one <em>libro</em> · unit <code>flr</code></span>
 </p>
-
-<p align="center">
-  <img src="docs/logos/cursor.png" alt="Cursor" height="44" />
-  <img src="docs/logos/claude.png" alt="Claude Code" height="44" />
-  <img src="docs/logos/gemini.png" alt="Gemini CLI" height="44" />
-  <img src="docs/logos/codex.png" alt="Codex CLI" height="44" />
-  <img src="docs/logos/continue.png" alt="Continue" height="44" />
-  <img src="docs/logos/agents.png" alt="Agent Skills" height="44" />
-</p>
-
-No npm dependencies. Shared data lives in an agent-neutral home folder — `~/.token-tracker/` — so Cursor, Claude, Gemini, Codex, and Continue all contribute to one history.
-
-<p align="center">
-  <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
-</p>
-
-## Why
-
-AI sessions burn tokens across many threads, models, and side quests. Token Tracker answers:
-
-- **Where did the tokens go?** Breakdown by `project/feature`, not just a session total
-- **What does this week look like?** Daily heat map (same shape as a GitHub contribution graph)
-- **What am I burning right now?** Optional Cursor CLI `statusLine` with feature-scoped `toks` and estimated `$` cost
-
-Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward.
-
-## Features
-
-- **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
-- **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
-- **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
-- **`/set-feature` slash command** — label the current workspace feature from chat (Cursor, Claude, Gemini)
-- **Gemini custom commands** — `/token-tracker` and `/set-feature` under `~/.gemini/commands/`
-- **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
-- **Estimated cost per feature** — from `prices.json` rates × prompt/completion deltas (epoch-aware)
-- **Epoch-aware totals** — feature resets do not double-count growing snapshots
-- **Zero runtime deps** — plain Node.js 22+ scripts
 
 ## Quick install
-
-Install everywhere you use agent skills:
 
 ```bash
 npx @mbrundige/token-tracker install --all
@@ -61,11 +20,22 @@ Or pick hosts:
 npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 ```
 
+No npm dependencies. Shared data lives in `~/.token-tracker/` — every host feeds one history.
+
 <p align="center">
   <img src="docs/screenshots/install.png" alt="token-tracker install output" width="720" />
 </p>
 
 ### Supported hosts
+
+<p align="center">
+  <img src="docs/logos/cursor.png" alt="Cursor" height="36" />
+  <img src="docs/logos/claude.png" alt="Claude Code" height="36" />
+  <img src="docs/logos/gemini.png" alt="Gemini CLI" height="36" />
+  <img src="docs/logos/codex.png" alt="Codex CLI" height="36" />
+  <img src="docs/logos/continue.png" alt="Continue" height="36" />
+  <img src="docs/logos/agents.png" alt="Agent Skills" height="36" />
+</p>
 
 | | Flag | Host | Skill path | Extra |
 | --- | --- | --- | --- | --- |
@@ -93,6 +63,44 @@ npx @mbrundige/token-tracker install --cursor --claude --gemini --codex
 Defaults when no target flags are set: `--cursor` and `--statusline`.
 
 Install also writes a `token-tracker` launcher to `~/.local/bin/token-tracker` (and a shared CLI under `~/.token-tracker/cli/`). If your shell cannot find `token-tracker`, add `~/.local/bin` to `PATH`, or keep using `npx @mbrundige/token-tracker …` / `node ~/.cursor/skills/token-tracker/scripts/….js`.
+
+## Why
+
+AI sessions burn tokens across many threads, models, and side quests. Token Tracker answers:
+
+- **Where did the tokens go?** Breakdown by `project/feature`, not just a session total
+- **What does this week look like?** Daily heat map (same shape as a GitHub contribution graph)
+- **What am I burning right now?** Optional Cursor CLI `statusLine` with feature-scoped `toks` and estimated `$` cost
+
+Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward.
+
+Florence’s gold florin (*fiorino d’oro*) was Europe’s trusted **settlement** coin — a stable unit of account. **token-tracker** treats AI tokens the same way: one local ledger under `~/.token-tracker/`, an ASCII **F** for *fiorino*, and a blue chip as the assay mark that the count lives on *your* machine.
+
+<p align="center">
+  <img src="docs/logos/florin-coin.png" alt="Engraved florin F-coin" width="200" />
+  &nbsp;&nbsp;
+  <img src="docs/logos/florin-ascii.png" alt="ASCII florin disc" width="200" />
+</p>
+
+## Features
+
+- **One-command install** into Cursor, Claude Code, Gemini CLI, Codex, Continue, and `~/.agents/skills`
+- **Shared history** across hosts (one JSONL ledger under `~/.token-tracker/`)
+- **`/token-tracker` skill** — run the report (and optionally save a snapshot) from chat
+- **`/set-feature` slash command** — label the current workspace feature from chat (Cursor, Claude, Gemini)
+- **Gemini custom commands** — `/token-tracker` and `/set-feature` under `~/.gemini/commands/`
+- **Feature-scoped status line** — project, feature, model, context bar, token count, estimated cost
+- **Estimated cost per feature** — from `prices.json` rates × prompt/completion deltas (epoch-aware)
+- **Epoch-aware totals** — feature resets do not double-count growing snapshots
+- **Zero runtime deps** — plain Node.js 22+ scripts
+
+<p align="center">
+  <img src="docs/screenshots/report.png" alt="token-tracker report with feature breakdown, estimated cost, and heat map" width="720" />
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
+</p>
 
 ## Requirements
 
@@ -364,7 +372,7 @@ Override paths with `TOKEN_TRACKER_HOME`, `TOKEN_TRACKER_CONFIG`, `TOKEN_TRACKER
 | `.github/workflows/` | CI checks + npm publish on `v*` tags |
 | `cursor/`, `claude/`, `gemini/`, `codex/`, `agents/`, `continue/` | Checked-in `SKILL.md` copies per host |
 | `docs/screenshots/` | README terminal demos |
-| `docs/logos/` | Host badges + project wordmark |
+| `docs/logos/` | Florin brand marks + host badges |
 
 ## Publish (maintainers)
 
