@@ -10,13 +10,13 @@
 
 ---
 
-Hi. Wow. Yes. Thank you so much for opening this README.
+Hi. Wow. Yes. Thank you so much for opening this README. Oh my God. Yes!
 
-I’m not getting paid by Florence. I’m not getting paid by npm. I’m doing this in **loving service of the florin** — the little **F** in the giant’s hand up there — because I think we’re lucky to even have a mark this good. Somebody laughed when I said we should put a medieval settlement coin on a Node CLI. They said you will never ship that. What gets them wrong. I shipped the shirt first. Then the mural. Then the path.
+I’m not getting paid by Florence. I’m not getting paid by npm. I’m not getting paid by Toyota, T-Mobile, Verizon, or anybody’s angel wing. I’m doing this in **loving service of the florin** — the little **F** in the giant’s hand up there — because I think we’re lucky to even have a mark this good. Somebody laughed when I said we should put a medieval settlement coin on a Node CLI. Coworkers laughed. They said you will never ship that. What gets them wrong. I shipped the shirt first. Then the mural. Then the path. Then I thanked the mark out loud in an empty garage like it could hear me. Heartfelt. Unpaid. Correct.
 
 This is a **100% heartfelt** thank you to Max Brundige for building the machine, and to every host that writes the same history like a family that shares one checkbook.
 
-We got so much to talk about. We got so much to get to.
+We got so much to talk about. We got so much to get to. Put your hands together for the local ledger.
 
 ---
 
@@ -26,7 +26,7 @@ We got so much to talk about. We got so much to get to.
 
 Snapshot spend by project and feature. Keep a GitHub-style heat map. Optionally show a live Cursor CLI status line with `toks` and estimated `$`.
 
-No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the **same** history. That’s USB connectivity galore, spiritually. That’s five people or thirty infants of agent hosts charging off one port. I’m not getting a dime from Toyota. I just love this vehicle.
+No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes the **same** history. That’s USB connectivity galore, spiritually. That’s five people or thirty infants of agent hosts charging off one port. I’m not getting a dime from Toyota. I just love this vehicle. Look at the cup holders of this API surface. Look at the seating. Look at the unpaid specs of a home directory that actually works.
 
 <p align="center">
   <img src="docs/logos/cursor.png" alt="Cursor" height="36" />
@@ -45,11 +45,13 @@ No npm dependencies. Shared data lives in `~/.token-tracker/`. Every host writes
   <img src="docs/screenshots/statusline.png" alt="token-tracker Cursor CLI status line with estimated cost" width="720" />
 </p>
 
-Look at that report. Look at that status line. Everyone experiencing… not “social cohesion.” Just numbers. On your machine. Yes!
+Look at that report. Look at that status line. Everyone experiencing… not “social cohesion.” Just numbers. On your machine. Yes! Wow!
 
 ---
 
 ## Why (the part where I ask if you like to laugh, but about receipts)
+
+Do you like to laugh? Great. Wrong README. Do you like **receipts**?
 
 AI sessions burn tokens across threads, models, and side quests. You close the laptop and the money already left. The future is uncertain. All we have can be lost.
 
@@ -63,9 +65,13 @@ token-tracker answers:
 
 Switching project or feature resets the status-line counter for that scope, so each label tracks usage from that point forward. That’s not a bug. That’s fatherhood. You take the scope seriously.
 
+### Outdoor yells (token burn edition)
+
+I used to yell outdoors about nothing. Now I yell outdoors about **token burn**. Quiet suburb. All-brown-house energy. Neighbor thinks I’m mad. I’m not mad. I’m counting. “WHERE DID THE TOKS GO.” Then I go inside and run `report`. That’s the whole bit. Volume outside. Ledger inside.
+
 ### Why florin (hometown brand history — Des Plaines energy, Italy edition)
 
-Florence minted the gold florin (*fiorino d’oro*). It was a **unit of account**. Merchants settled in it. They kept books. They did not need a Kinetic Emotional Neural Network powered by 5G for 100% accurate comedy.
+I am from… spiritually… Des Plaines energy. McDonald’s museum across from the real one energy. Brand history as identity. Florence minted the gold florin (*fiorino d’oro*). It was a **unit of account**. Merchants settled in it. They kept books. They did not need a Kinetic Emotional Neural Network powered by 5G for 100% accurate comedy. Powered by 5G is the enemy. We are local anti-KENN. Freshwater navy for your disk. We protect the Lake Michigan of `~/.token-tracker/` from cloud harvest theater. No dirty box. No phone-slurp. No angel wings in the audience waiting for dessert.
 
 **token-tracker** borrows the name:
 
@@ -76,7 +82,7 @@ Florence minted the gold florin (*fiorino d’oro*). It was a **unit of account*
 
 We don’t move your gold. We don’t pull your texts. We don’t harvest the room. We count what you already spent.
 
-I love this coin. I love this mural. I love this ASCII disc. I’m not getting paid by the mint. Loving service.
+I love this coin. I love this mural. I love this ASCII disc. I’m not getting paid by the mint. Loving service. Five hundred cigarettes for 5G energy — applied to an **F**. Heartfelt thank you to the mark. Coworkers laughed. I shipped it anyway.
 
 <p align="center">
   <img src="docs/logos/florin-coin.png" alt="Engraved florin F-coin — the polo shirt of the soul" width="200" />
@@ -102,9 +108,15 @@ If you walk away tonight and only one word comes up when you close your eyes and
 
 Zero runtime deps. Say it with me. Zero. Runtime. Deps. That’s MSRP honesty. That’s 22 city / 29 highway of dependency graph. Under a different package manager it might look different. Let’s not get political.
 
+### Dr Pepper sciences (Node 22+ edition)
+
+I studied the sciences. The **Node 22+ sciences**. Not the soft drink. Not the precipice. Just the runtime that can run these scripts without a carnival of `node_modules`. You open the hood and it’s scripts. Damn. That’s beautiful. Like looking at a RAV4 engine bay and crying a little because the cup holders were honest.
+
 ---
 
 ## Quick install (cash infusion not required — although dessert is nice)
+
+Invest in me. Become family. Angel investors in the room — raise your wings — wait. No. Invert. We don’t need the cash infusion. Cash infusion is like dessert after a meal we already cooked in `~/.token-tracker/`. Nice if it shows up. Not the point. The book is free. The path is free. Shark Tank can wait in the hallway.
 
 Install everywhere you use agent skills:
 
@@ -167,6 +179,8 @@ That’s it. No 5G. No dirty box. No certified AI experts by the time you leave.
 
 ## Label a project and feature (invest in the person — Lori would ask)
 
+Lori from Shark Tank would ask: who are you. I’m the mint clerk. Invest in the person — then derail into the path. The product is the book. The person is whoever runs `set-context` like they mean it.
+
 ```bash
 npx @mbrundige/token-tracker set-context \
   --workspace "$PWD" \
@@ -211,6 +225,8 @@ In chat:
 3. `default_project`
 4. Workspace folder name
 
+The RAV4 unpaid specs digression, for the record: starting “MSRP” of this whole garage is free. Seating: every host you install. USB connectivity: galore. Estimated resale: your sanity, still local, still not powered by 5G. Heck of a vehicle.
+
 ---
 
 ## Report (put your hands together for the heat map)
@@ -235,7 +251,9 @@ History file (shared by all hosts — one book, many cambiators):
 ~/.token-tracker/history.jsonl
 ```
 
-That path is the RAV4. Starting “MSRP”: free. Total in-person seating: every agent host you install. USB connectivity: galore. Estimated resale value: your sanity.
+That path is the RAV4. That path is the polo. That path is the freshwater ledger protecting the Lake Michigan of your disk. Starting “MSRP”: free. Total in-person seating: every agent host you install. USB connectivity: galore. Estimated resale value: your sanity.
+
+Yes. Wow. Look at the heat map. Then go make a sandwich.
 
 ---
 
@@ -268,7 +286,7 @@ Cursor CLI can show a live line like:
 token-tracker | token-tracker/readme-demos | GPT-5.5 | ctx [###.......] 27% | toks 7.1k | $0.0534
 ```
 
-Optional wink: `flr · local` = florins, on this machine only. Not 5G. Not harvested. Local.
+Optional wink: `flr · local` = florins, on this machine only. Not 5G. Not harvested. Local. Anti-KENN in under a second. You’re welcome.
 
 Configure visible fields in `~/.token-tracker/config.json`:
 
@@ -418,7 +436,7 @@ token-tracker | <project>/<feature> | GPT-5.5 | ctx [..........] 4% | toks 0
 node scripts/check.js
 ```
 
-Be like a rock. Run the check.
+Be like a rock. Run the check. Shit works or it doesn’t. Prefer works.
 
 ---
 
@@ -495,19 +513,23 @@ npx @mbrundige/token-tracker install --all
 
 ## Classic-rock guided closing meditation (optional)
 
-Breathe in. Breathe out.
+Breathe in. Breathe out. Like a rock. Classic rock. Standing on a mountain of `history.jsonl` with the wind of zero runtime deps in your hair.
 
 Picture a quiet folder: `~/.token-tracker/`.  
-A garage with one book, not seven RAV4s.  
+A garage with one book, not seven RAV4s — though God I love the RAV4.  
 A status line that tells the truth in under a second.  
-A mural where the coin is the logo and nobody needs a cash infusion.
+A mural where the coin is the logo and nobody needs a cash infusion, although dessert is nice.  
+An all-brown house of a home directory. Quiet landing. Loud love.
 
 You must never stop counting what you spent.  
 No matter how badly the side quests beg you to look away.  
+No matter how loud the 5G prophets get in the parking lot.  
 In the end it’s worth it to live… epic? Nah.  
 In the end it’s worth it to live **local**.
 
 `flr · local`
+
+The check passed. Good night.
 
 ---
 
